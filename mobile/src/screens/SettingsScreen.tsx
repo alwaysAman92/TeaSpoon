@@ -1,5 +1,6 @@
+import { useAuth } from "@clerk/clerk-expo";
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/api/client";
@@ -23,6 +24,7 @@ const HEALTH_FLAGS = [
 ];
 
 export function SettingsScreen() {
+  const { signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const { settings, saveSettings } = useApp();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -216,6 +218,15 @@ export function SettingsScreen() {
         </Text>
       </View>
 
+      {process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+        <Pressable
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
+          onPress={() => void signOut()}
+        >
+          <Text style={styles.logoutButtonText}>Sign Out of TeaSpoon</Text>
+        </Pressable>
+      ) : null}
+
       <Text style={styles.version}>TeaSpoon v5.0 · Know it in teaspoons, not grams.</Text>
     </ScrollView>
   );
@@ -279,4 +290,23 @@ const styles = StyleSheet.create({
   methodTitle: { color: colors.accentDeep, fontSize: font.body, fontWeight: weight.bold, marginBottom: 6 },
   methodBody: { color: colors.inkSoft, fontSize: font.small, lineHeight: 19 },
   version: { color: colors.inkFaint, fontSize: font.tiny, textAlign: "center", marginTop: space.xl },
+  logoutButton: {
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: space.lg,
+    ...shadow.card,
+  },
+  logoutButtonPressed: {
+    backgroundColor: colors.surfaceSunken,
+  },
+  logoutButtonText: {
+    color: colors.danger,
+    fontSize: font.body,
+    fontWeight: weight.bold,
+  },
 });

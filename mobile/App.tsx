@@ -1,4 +1,4 @@
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { ClerkProvider, SignedIn, SignedOut, useAuth } from "@clerk/clerk-expo";
 import { createBottomTabNavigator, type BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -15,6 +15,7 @@ import { DashboardScreen } from "@/screens/DashboardScreen";
 import { ResultScreen } from "@/screens/ResultScreen";
 import { ScanScreen } from "@/screens/ScanScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
+import { SignInScreen } from "@/screens/SignInScreen";
 import { AppProvider } from "@/store/AppContext";
 import { colors, radius, shadow, weight } from "@/theme";
 
@@ -107,25 +108,42 @@ function AuthBridge({ children }: { children: React.ReactNode }) {
 }
 
 function AppInner() {
+  const innerContent = (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack.Screen name="Tabs" component={Tabs} />
+      <Stack.Screen
+        name="Result"
+        component={ResultScreen}
+        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+      />
+      <Stack.Screen
+        name="Capture"
+        component={CaptureScreen}
+        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+      />
+    </Stack.Navigator>
+  );
+
   return (
     <SafeAreaProvider>
       <AppProvider>
         <StatusBar style="dark" />
-        <NavigationContainer theme={navTheme}>
-          <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-            <Stack.Screen name="Tabs" component={Tabs} />
-            <Stack.Screen
-              name="Result"
-              component={ResultScreen}
-              options={{ presentation: "modal", animation: "slide_from_bottom" }}
-            />
-            <Stack.Screen
-              name="Capture"
-              component={CaptureScreen}
-              options={{ presentation: "modal", animation: "slide_from_bottom" }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
+        {CLERK_KEY ? (
+          <>
+            <SignedIn>
+              <NavigationContainer theme={navTheme}>
+                {innerContent}
+              </NavigationContainer>
+            </SignedIn>
+            <SignedOut>
+              <SignInScreen />
+            </SignedOut>
+          </>
+        ) : (
+          <NavigationContainer theme={navTheme}>
+            {innerContent}
+          </NavigationContainer>
+        )}
       </AppProvider>
     </SafeAreaProvider>
   );
