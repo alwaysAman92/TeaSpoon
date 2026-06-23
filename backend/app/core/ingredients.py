@@ -67,6 +67,21 @@ NON_VEG_INGREDIENTS = {
 
 AMBIGUOUS_INS = {"471", "627", "631", "920"}
 
+# Common allergens (FSSAI / Codex Alimentarius major allergen list).
+COMMON_ALLERGENS: dict[str, list[str]] = {
+    "Milk / Dairy": ["milk", "cream", "butter", "cheese", "whey", "casein", "lactose", "curd", "paneer", "ghee"],
+    "Peanuts": ["peanut", "groundnut"],
+    "Tree Nuts": ["almond", "cashew", "walnut", "pistachio", "hazelnut", "pecan", "macadamia", "brazil nut"],
+    "Wheat / Gluten": ["wheat", "gluten", "maida", "atta", "semolina", "suji", "rawa", "barley", "rye", "oat"],
+    "Soy": ["soy", "soya", "soybean", "soy lecithin"],
+    "Egg": ["egg", "albumin", "lysozyme", "ovalbumin"],
+    "Fish": ["fish", "anchovy", "sardine", "mackerel", "tuna", "cod"],
+    "Crustaceans": ["shrimp", "prawn", "crab", "lobster", "crayfish"],
+    "Sesame": ["sesame", "til"],
+    "Mustard": ["mustard"],
+    "Sulphites": ["sulphite", "sulfite", "sulphur dioxide", "sulfur dioxide", "metabisulphite", "metabisulfite"],
+}
+
 _INS_RE = re.compile(r"\b(?:ins|e)\s*[- ]?\s*(\d{3,4}[a-d]?)\b", re.IGNORECASE)
 
 
@@ -89,6 +104,7 @@ class IngredientReport:
     non_veg_flags: List[NonVegFlag]
     veg_status: str  # "veg" | "non_veg" | "uncertain"
     note: str
+    allergens_detected: List[str]
 
 
 def analyse_ingredients(
@@ -132,9 +148,18 @@ def analyse_ingredients(
         veg_status = "veg"
         note = "No animal-derived ingredients detected."
 
+    # Allergen detection.
+    allergens_detected: List[str] = []
+    for allergen_name, keywords in COMMON_ALLERGENS.items():
+        for keyword in keywords:
+            if re.search(rf"\b{re.escape(keyword)}\b", text):
+                allergens_detected.append(allergen_name)
+                break
+
     return IngredientReport(
         additives=additives,
         non_veg_flags=non_veg_flags,
         veg_status=veg_status,
         note=note,
+        allergens_detected=allergens_detected,
     )

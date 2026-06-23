@@ -112,6 +112,7 @@ def build_detail_layer(product: models.Product, hsr_result: hsr_core.HSRResult) 
                                    possibly_non_veg=a.possibly_non_veg) for a in report.additives],
             non_veg_flags=[NonVegFlagOut(ingredient=f.ingredient, explanation=f.explanation)
                            for f in report.non_veg_flags],
+            allergens_detected=report.allergens_detected,
         ),
     )
 

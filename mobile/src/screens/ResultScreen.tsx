@@ -8,6 +8,7 @@ import { AltCard } from "@/components/AltCard";
 import { Chip } from "@/components/Chip";
 import { DetailLayer } from "@/components/DetailLayer";
 import type { RootStackParamList } from "@/navigation";
+import { useApp } from "@/store/AppContext";
 import { colors, font, radius, shadow, space, weight } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Result">;
@@ -36,7 +37,10 @@ export function ResultScreen({ route, navigation }: Props) {
         <Text style={styles.notFoundBody}>
           {result.message ?? "Snap the nutrition label and we'll read it for you."}
         </Text>
-        <Pressable style={styles.cta} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.cta}
+          onPress={() => navigation.navigate("Capture", { barcode: route.params.result.product?.barcode ?? "unknown" })}
+        >
           <Text style={styles.ctaText}>Snap the label</Text>
         </Pressable>
       </View>
@@ -72,6 +76,9 @@ export function ResultScreen({ route, navigation }: Props) {
           <Text style={styles.heroBig}>{heroNumber}</Text>
           <Text style={styles.heroRest}>{heroRest}</Text>
         </View>
+
+        {/* Allergen warning — high visibility if user has allergy profile */}
+        <AllergenWarning allergens={detail?.ingredients?.allergens_detected} />
 
         {/* Other translated nutrients. */}
         <View style={styles.translationRow}>
@@ -148,6 +155,18 @@ function formatNum(n: number): string {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
 }
 
+function AllergenWarning({ allergens }: { allergens?: string[] }) {
+  const { settings } = useApp();
+  const hasAllergyProfile = settings?.health_flags?.includes("allergy");
+  if (!hasAllergyProfile || !allergens || allergens.length === 0) return null;
+  return (
+    <View style={styles.allergenCard}>
+      <Text style={styles.allergenTitle}>⚠️ Allergen Warning</Text>
+      <Text style={styles.allergenBody}>Contains: {allergens.join(", ")}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   center: { justifyContent: "center", alignItems: "center" },
@@ -207,4 +226,14 @@ const styles = StyleSheet.create({
   notFoundBody: { color: colors.inkSoft, fontSize: font.body, textAlign: "center", marginTop: space.md, marginBottom: space.xl },
   cta: { backgroundColor: colors.accent, paddingVertical: 14, paddingHorizontal: 28, borderRadius: radius.pill },
   ctaText: { color: colors.white, fontWeight: weight.bold, fontSize: font.body },
+  allergenCard: {
+    backgroundColor: "#FFF3CD",
+    borderRadius: radius.lg,
+    padding: space.md,
+    marginBottom: space.md,
+    borderWidth: 1,
+    borderColor: "#FFCA2C",
+  },
+  allergenTitle: { color: "#856404", fontSize: font.title, fontWeight: weight.bold, marginBottom: 4 },
+  allergenBody: { color: "#856404", fontSize: font.body, lineHeight: 20 },
 });

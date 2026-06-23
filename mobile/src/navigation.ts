@@ -11,4 +11,5 @@ export type TabsParamList = {
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabsParamList> | undefined;
   Result: { result: ScanResult };
+  Capture: { barcode: string };
 };

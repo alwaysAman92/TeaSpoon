@@ -1,9 +1,11 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { api } from "@/api/client";
 import { Chip } from "@/components/Chip";
 import { useApp } from "@/store/AppContext";
+import type { LeaderboardEntry } from "@/types";
 import { colors, font, radius, shadow, space, weight } from "@/theme";
 
 const PRIMARY_NUTRIENTS = [
@@ -17,11 +19,40 @@ const HEALTH_FLAGS = [
   { key: "diabetic", label: "Diabetic" },
   { key: "hypertensive", label: "Hypertensive" },
   { key: "weight_goal", label: "Weight goal" },
+  { key: "allergy", label: "Allergy" },
 ];
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { settings, saveSettings } = useApp();
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbScope, setLbScope] = useState<"national" | "local">("national");
+  const [cityDraft, setCityDraft] = useState("");
+  const [regionDraft, setRegionDraft] = useState("");
+
+  useEffect(() => {
+    if (settings) {
+      setCityDraft(settings.city ?? "");
+      setRegionDraft(settings.region ?? "");
+    }
+  }, [settings?.city, settings?.region]);
+
+  const fetchLeaderboard = useCallback(async () => {
+    setLbLoading(true);
+    try {
+      const params = lbScope === "local" && settings?.city ? { city: settings.city } : undefined;
+      setLeaderboard(await api.getLeaderboard(params));
+    } catch {
+      /* best effort */
+    } finally {
+      setLbLoading(false);
+    }
+  }, [lbScope, settings?.city]);
+
+  useEffect(() => {
+    void fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   if (!settings) {
     return <View style={styles.screen} />;
@@ -75,7 +106,7 @@ export function SettingsScreen() {
 
       <Block
         label="Health profile"
-        hint="Tightens your daily limits — diabetic caps sugar at 6 tsp, hypertensive caps sodium at 1500 mg."
+        hint="Tightens your daily limits — diabetic caps sugar at 6 tsp, hypertensive caps sodium at 1500 mg. Allergy enables allergen warnings on scan results."
       >
         <View style={styles.toggle}>
           {HEALTH_FLAGS.map((f) => (
@@ -88,6 +119,92 @@ export function SettingsScreen() {
             />
           ))}
         </View>
+      </Block>
+
+      {/* Location */}
+      <Block label="Your location" hint="Used for the local leaderboard.">
+        <TextInput
+          style={styles.textInput}
+          value={cityDraft}
+          onChangeText={setCityDraft}
+          placeholder="City (e.g. Mumbai)"
+          placeholderTextColor={colors.inkFaint}
+          onBlur={() => {
+            if (cityDraft !== (settings.city ?? "")) {
+              void saveSettings({ city: cityDraft } as Partial<typeof settings>);
+            }
+          }}
+        />
+        <TextInput
+          style={[styles.textInput, { marginTop: space.sm }]}
+          value={regionDraft}
+          onChangeText={setRegionDraft}
+          placeholder="Region (e.g. Maharashtra)"
+          placeholderTextColor={colors.inkFaint}
+          onBlur={() => {
+            if (regionDraft !== (settings.region ?? "")) {
+              void saveSettings({ region: regionDraft } as Partial<typeof settings>);
+            }
+          }}
+        />
+      </Block>
+
+      {/* Contributor Recognition */}
+      <Block label="Your contributions">
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{settings.points}</Text>
+            <Text style={styles.statLabel}>Points</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>{settings.badges.length}</Text>
+            <Text style={styles.statLabel}>Badges</Text>
+          </View>
+        </View>
+        {settings.badges.length > 0 ? (
+          <View style={[styles.toggle, { marginTop: space.md }]}>
+            {settings.badges.map((b) => (
+              <Chip key={b} label={`🏆 ${b}`} tone="good" active />
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.hint}>Submit a label photo to earn your first badge!</Text>
+        )}
+      </Block>
+
+      {/* Leaderboard */}
+      <Block label="Leaderboard">
+        <View style={styles.toggle}>
+          <Chip
+            label="National"
+            tone={lbScope === "national" ? "warn" : "neutral"}
+            active={lbScope === "national"}
+            onPress={() => setLbScope("national")}
+          />
+          <Chip
+            label={settings.city ? `${settings.city}` : "Local"}
+            tone={lbScope === "local" ? "warn" : "neutral"}
+            active={lbScope === "local"}
+            onPress={() => setLbScope("local")}
+          />
+        </View>
+        {lbLoading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: space.md }} />
+        ) : leaderboard.length > 0 ? (
+          <View style={styles.lbList}>
+            {leaderboard.map((entry, i) => (
+              <View key={`${entry.display_name}-${i}`} style={styles.lbRow}>
+                <Text style={styles.lbRank}>{i + 1}</Text>
+                <Text style={styles.lbName} numberOfLines={1}>
+                  {entry.display_name}
+                </Text>
+                <Text style={styles.lbPoints}>{entry.points} pts</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={[styles.hint, { marginTop: space.md }]}>No contributors yet. Be the first!</Text>
+        )}
       </Block>
 
       <View style={styles.methodology}>
@@ -127,6 +244,37 @@ const styles = StyleSheet.create({
   blockLabel: { color: colors.ink, fontSize: font.title, fontWeight: weight.bold, marginBottom: space.md },
   toggle: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   hint: { color: colors.inkSoft, fontSize: font.small, marginTop: space.md, lineHeight: 18 },
+  textInput: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    paddingVertical: 10,
+    fontSize: font.body,
+    color: colors.ink,
+    backgroundColor: colors.bg,
+  },
+  statsRow: { flexDirection: "row", gap: space.md },
+  statBox: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: space.md,
+    alignItems: "center",
+  },
+  statNumber: { color: colors.accent, fontSize: font.h2, fontWeight: weight.black },
+  statLabel: { color: colors.inkSoft, fontSize: font.small, marginTop: 2 },
+  lbList: { marginTop: space.md },
+  lbRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  lbRank: { color: colors.accent, fontSize: font.body, fontWeight: weight.bold, width: 28 },
+  lbName: { color: colors.ink, fontSize: font.body, flex: 1 },
+  lbPoints: { color: colors.inkSoft, fontSize: font.small, fontWeight: weight.semibold },
   methodology: { backgroundColor: colors.accentSoft, borderRadius: radius.lg, padding: space.md, marginTop: space.sm },
   methodTitle: { color: colors.accentDeep, fontSize: font.body, fontWeight: weight.bold, marginBottom: 6 },
   methodBody: { color: colors.inkSoft, fontSize: font.small, lineHeight: 19 },

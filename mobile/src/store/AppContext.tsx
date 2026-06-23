@@ -17,6 +17,10 @@ const DEFAULT_SETTINGS: Settings = {
   target_sugar_tsp: null,
   target_sodium_mg: null,
   target_protein_g: null,
+  points: 0,
+  city: null,
+  region: null,
+  badges: [],
 };
 
 const AppContext = createContext<AppState | undefined>(undefined);

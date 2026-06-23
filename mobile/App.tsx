@@ -1,12 +1,16 @@
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { createBottomTabNavigator, type BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { setClerkTokenGetter } from "@/api/client";
 import type { RootStackParamList, TabsParamList } from "@/navigation";
+import { CaptureScreen } from "@/screens/CaptureScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { ResultScreen } from "@/screens/ResultScreen";
 import { ScanScreen } from "@/screens/ScanScreen";
@@ -16,6 +20,17 @@ import { colors, radius, shadow, weight } from "@/theme";
 
 const Tab = createBottomTabNavigator<TabsParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+// Clerk token cache for native secure storage.
+const tokenCache =
+  Platform.OS !== "web"
+    ? {
+        getToken: (key: string) => SecureStore.getItemAsync(key),
+        saveToken: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+      }
+    : undefined;
 
 const GLYPHS: Record<keyof TabsParamList, string> = {
   Dashboard: "◎",
@@ -80,7 +95,18 @@ const navTheme = {
   colors: { ...DefaultTheme.colors, background: colors.bg, card: colors.bg, text: colors.ink, border: colors.line },
 };
 
-export default function App() {
+/** Bridges Clerk auth into the API client once a session is active. */
+function AuthBridge({ children }: { children: React.ReactNode }) {
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    setClerkTokenGetter(() => getToken());
+  }, [getToken]);
+
+  return <>{children}</>;
+}
+
+function AppInner() {
   return (
     <SafeAreaProvider>
       <AppProvider>
@@ -93,11 +119,31 @@ export default function App() {
               component={ResultScreen}
               options={{ presentation: "modal", animation: "slide_from_bottom" }}
             />
+            <Stack.Screen
+              name="Capture"
+              component={CaptureScreen}
+              options={{ presentation: "modal", animation: "slide_from_bottom" }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </AppProvider>
     </SafeAreaProvider>
   );
+}
+
+export default function App() {
+  if (CLERK_KEY) {
+    return (
+      <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
+        <AuthBridge>
+          <AppInner />
+        </AuthBridge>
+      </ClerkProvider>
+    );
+  }
+
+  // No Clerk key configured — run without auth (local dev).
+  return <AppInner />;
 }
 
 const styles = StyleSheet.create({

@@ -54,3 +54,27 @@ async def submit_label_photo(
 def methodology() -> dict:
     """Public in-app methodology note (Section 10.3)."""
     return {"note": METHODOLOGY_NOTE}
+
+
+@router.get("/leaderboard")
+def leaderboard(
+    city: Optional[str] = None,
+    region: Optional[str] = None,
+    db: Session = Depends(get_db),
+) -> list:
+    """Top 20 contributors, optionally filtered by city or region (Section 10.4)."""
+    query = db.query(models.User).filter(models.User.points > 0)
+    if city:
+        query = query.filter(models.User.city == city)
+    if region:
+        query = query.filter(models.User.region == region)
+    users = query.order_by(models.User.points.desc()).limit(20).all()
+    return [
+        {
+            "display_name": u.display_name or "Anonymous",
+            "points": u.points or 0,
+            "city": u.city,
+            "region": u.region,
+        }
+        for u in users
+    ]

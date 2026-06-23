@@ -47,6 +47,11 @@ class User(Base):
     target_sodium_mg: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     target_protein_g: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
+    # Contributor recognition (Section 10.4).
+    points: Mapped[int] = mapped_column(Integer, default=0)
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     scans: Mapped[list["ScanLog"]] = relationship(back_populates="user")

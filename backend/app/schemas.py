@@ -109,6 +109,7 @@ class IngredientsOut(BaseModel):
     note: str
     additives: List[AdditiveOut]
     non_veg_flags: List[NonVegFlagOut]
+    allergens_detected: List[str] = Field(default_factory=list)
 
 
 class DetailLayerOut(BaseModel):
@@ -186,6 +187,8 @@ class SettingsUpdate(BaseModel):
     target_sugar_tsp: Optional[float] = None
     target_sodium_mg: Optional[float] = None
     target_protein_g: Optional[float] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
 
 
 class SettingsOut(BaseModel):
@@ -195,6 +198,10 @@ class SettingsOut(BaseModel):
     target_sugar_tsp: Optional[float]
     target_sodium_mg: Optional[float]
     target_protein_g: Optional[float]
+    points: int = 0
+    city: Optional[str] = None
+    region: Optional[str] = None
+    badges: List[str] = Field(default_factory=list)
 
 
 class DataReportRequest(BaseModel):

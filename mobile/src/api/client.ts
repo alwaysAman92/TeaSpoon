@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 
 import type {
   Dashboard,
+  LeaderboardEntry,
   ScanResult,
   Settings,
   TrendPoint,
@@ -17,6 +18,13 @@ const BASE_URL: string =
   "http://localhost:8000";
 
 const USER_KEY = "teaspoon.userId";
+
+// Clerk token getter — set by the auth bridge in App.tsx when Clerk is active.
+let _getClerkToken: (() => Promise<string | null>) | null = null;
+
+export function setClerkTokenGetter(getter: () => Promise<string | null>) {
+  _getClerkToken = getter;
+}
 
 function newId(): string {
   return `u_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
@@ -47,14 +55,25 @@ async function getUserId(): Promise<string> {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const userId = await getUserId();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init.headers as Record<string, string> || {}),
+  };
+
+  // If Clerk is active, inject Bearer token. Otherwise fall back to X-User-Id.
+  if (_getClerkToken) {
+    const token = await _getClerkToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  } else {
+    const userId = await getUserId();
+    headers["X-User-Id"] = userId;
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": userId,
-      ...(init.headers || {}),
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error(`Request failed (${res.status})`);
@@ -100,5 +119,40 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ barcode, reason }),
     });
+  },
+
+  async submitContribution(barcode: string, photoUri: string): Promise<unknown> {
+    const formData = new FormData();
+    formData.append("barcode", barcode);
+    formData.append("photo", {
+      uri: photoUri,
+      name: "label.jpg",
+      type: "image/jpeg",
+    } as unknown as Blob);
+
+    const headers: Record<string, string> = {};
+    if (_getClerkToken) {
+      const token = await _getClerkToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      const userId = await getUserId();
+      headers["X-User-Id"] = userId;
+    }
+
+    const res = await fetch(`${BASE_URL}/contributions/submit`, {
+      method: "POST",
+      body: formData,
+      headers,
+    });
+    if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+    return res.json();
+  },
+
+  getLeaderboard(params?: { city?: string; region?: string }): Promise<LeaderboardEntry[]> {
+    const qs = new URLSearchParams();
+    if (params?.city) qs.set("city", params.city);
+    if (params?.region) qs.set("region", params.region);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return request<LeaderboardEntry[]>(`/contributions/leaderboard${suffix}`);
   },
 };

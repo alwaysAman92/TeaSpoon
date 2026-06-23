@@ -98,6 +98,12 @@ def _try_promote(db: Session, barcode: str) -> str:
         )
         for s in matched:
             s.status = "matched"
+        # Award contributor points (Section 10.4).
+        submitter_ids = {s.user_id for s in matched}
+        for uid in submitter_ids:
+            submitter = db.get(models.User, uid)
+            if submitter:
+                submitter.points = (submitter.points or 0) + 100
         db.commit()
         return "confirmed"
 

@@ -79,6 +79,7 @@ export interface Ingredients {
   note: string;
   additives: Additive[];
   non_veg_flags: NonVegFlag[];
+  allergens_detected: string[];
 }
 
 export interface DetailLayer {
@@ -140,10 +141,21 @@ export interface Settings {
   target_sugar_tsp?: number | null;
   target_sodium_mg?: number | null;
   target_protein_g?: number | null;
+  points: number;
+  city?: string | null;
+  region?: string | null;
+  badges: string[];
 }
 
 export interface TrendPoint {
   date: string;
   value: number;
   pct: number;
+}
+
+export interface LeaderboardEntry {
+  display_name: string;
+  points: number;
+  city?: string | null;
+  region?: string | null;
 }

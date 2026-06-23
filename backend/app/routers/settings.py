@@ -1,6 +1,8 @@
 """Settings endpoints - single flat screen (PRD 7.2)."""
 from __future__ import annotations
 
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,23 @@ from ..schemas import SettingsOut, SettingsUpdate
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
+def _badges_for(user: models.User) -> List[str]:
+    """Compute dynamic badges based on contributor points (Section 10.4)."""
+    badges: List[str] = []
+    points = user.points or 0
+    if points >= 1:
+        badges.append("Contributor")
+    if points >= 500:
+        badges.append("Bronze Spoon")
+    if points >= 2000:
+        badges.append("Silver Spoon")
+    if points >= 5000:
+        badges.append("Gold Spoon")
+    if points >= 10000:
+        badges.append("Diamond Spoon")
+    return badges
+
+
 def _to_out(user: models.User) -> SettingsOut:
     return SettingsOut(
         alternatives_priority=user.alternatives_priority,
@@ -20,6 +39,10 @@ def _to_out(user: models.User) -> SettingsOut:
         target_sugar_tsp=user.target_sugar_tsp,
         target_sodium_mg=user.target_sodium_mg,
         target_protein_g=user.target_protein_g,
+        points=user.points or 0,
+        city=user.city,
+        region=user.region,
+        badges=_badges_for(user),
     )
 
 
@@ -47,6 +70,10 @@ def update_settings(
         user.target_sodium_mg = payload.target_sodium_mg
     if payload.target_protein_g is not None:
         user.target_protein_g = payload.target_protein_g
+    if payload.city is not None:
+        user.city = payload.city.strip() or None
+    if payload.region is not None:
+        user.region = payload.region.strip() or None
 
     db.commit()
     db.refresh(user)
