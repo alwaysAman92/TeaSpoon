@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, weight } from "@/theme";
 
@@ -22,6 +22,15 @@ interface Props {
 
 export function Chip({ label, tone = "neutral", onPress, active }: Props) {
   const t = TONES[tone];
+  
+  if (!onPress) {
+    return (
+      <View style={[styles.chip, { backgroundColor: t.bg }, active && styles.active]}>
+        <Text style={[styles.text, { color: t.fg }]}>{label}</Text>
+      </View>
+    );
+  }
+
   return (
     <Pressable
       onPress={onPress}

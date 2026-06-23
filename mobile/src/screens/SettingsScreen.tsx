@@ -24,7 +24,6 @@ const HEALTH_FLAGS = [
 ];
 
 export function SettingsScreen() {
-  const { signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const { settings, saveSettings } = useApp();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -219,16 +218,23 @@ export function SettingsScreen() {
       </View>
 
       {process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
-        <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
-          onPress={() => void signOut()}
-        >
-          <Text style={styles.logoutButtonText}>Sign Out of TeaSpoon</Text>
-        </Pressable>
+        <SignOutSection />
       ) : null}
 
       <Text style={styles.version}>TeaSpoon v5.0 · Know it in teaspoons, not grams.</Text>
     </ScrollView>
+  );
+}
+
+function SignOutSection() {
+  const { signOut } = useAuth();
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutButtonPressed]}
+      onPress={() => void signOut()}
+    >
+      <Text style={styles.logoutButtonText}>Sign Out of TeaSpoon</Text>
+    </Pressable>
   );
 }
 
