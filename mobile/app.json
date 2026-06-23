@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "TeaSpoon",
+    "slug": "teaspoon",
+    "version": "5.0.0",
+    "orientation": "portrait",
+    "scheme": "teaspoon",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#14110E",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.teaspoon.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "TeaSpoon uses the camera to scan product barcodes and read nutrition labels."
+      }
+    },
+    "android": {
+      "package": "app.teaspoon.mobile",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "TeaSpoon uses the camera to scan product barcodes and read nutrition labels."
+        }
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:8000"
+    }
+  }
+}

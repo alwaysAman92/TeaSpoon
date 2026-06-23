@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: teaspoon-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt -r requirements-prod.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TEASPOON_ENV
+        value: production
+      - key: CORS_ORIGINS
+        value: "https://alwaysaman92.github.io,http://localhost:8081"

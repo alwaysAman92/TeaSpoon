@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeaSpoon — Know it in teaspoons, not grams.</title>
+  <meta name="description" content="Scan any packaged food. See its sugar in teaspoons, sodium as a % of your daily limit, and watch your whole day add up. The nutrition tracker for India." />
+  <meta property="og:title" content="TeaSpoon — Know it in teaspoons, not grams." />
+  <meta property="og:description" content="Other apps rate one product. We track your whole day." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">🥄</span>
+      <span>TeaSpoon</span>
+    </a>
+    <a class="nav-cta" href="#get">Get the app</a>
+  </header>
+
+  <main id="top">
+    <!-- 1. HERO -->
+    <section class="hero">
+      <p class="eyebrow">Daily nutrition tracking · built for India</p>
+      <h1 class="hero-line">
+        You don't know<br />what you ate today.<br /><span class="accent">We do.</span>
+      </h1>
+      <p class="hero-sub">
+        Scan any packet. See its sugar in teaspoons — not grams.
+        Watch your whole day add up.
+      </p>
+      <div class="hero-actions" id="get">
+        <a class="btn btn-primary" href="#get">Get the app</a>
+        <span class="hero-note">Android &amp; iOS · free</span>
+      </div>
+    </section>
+
+    <!-- 2. STATS -->
+    <section class="stats reveal">
+      <div class="stat">
+        <div class="stat-num" data-count="31428" data-prefix="₹" data-suffix=" cr">₹0 cr</div>
+        <p class="stat-cap">India's yearly FMCG ad spend, telling you what to eat.</p>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-count="2318" data-prefix="₹" data-suffix=" cr">₹0 cr</div>
+        <p class="stat-cap">Australia's — about <strong>13.5× less</strong> than India.</p>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-count="0">0</div>
+        <p class="stat-cap">Mandatory front-of-pack health labels in India.</p>
+      </div>
+    </section>
+
+    <!-- 3. HOW IT WORKS -->
+    <section class="how reveal">
+      <h2 class="section-title">Four taps. One honest answer.</h2>
+      <ol class="steps">
+        <li><span class="step-n">01</span><span class="step-t">Scan the barcode.</span></li>
+        <li><span class="step-n">02</span><span class="step-t">See it in teaspoons.</span></li>
+        <li><span class="step-n">03</span><span class="step-t">Watch your day add up.</span></li>
+        <li><span class="step-n">04</span><span class="step-t">Get a better option.</span></li>
+      </ol>
+    </section>
+
+    <!-- 4. WHAT MAKES US DIFFERENT -->
+    <section class="diff reveal">
+      <h2 class="section-title">Not another product rater.</h2>
+      <div class="diff-grid">
+        <article class="diff-card">
+          <h3>Other apps rate one product. We track your whole day.</h3>
+          <p>No app — Indian or global — adds up your sugar, sodium and protein across everything you scan. We do.</p>
+        </article>
+        <article class="diff-card">
+          <h3>We don't invent our own scoring system.</h3>
+          <p>The health score is the government-run Health Star Rating formula. We use it as-is — no black box.</p>
+        </article>
+        <article class="diff-card">
+          <h3>We read the fine print, in plain English.</h3>
+          <p>"Multigrain." "No added MSG." We check those claims against the actual numbers — and flag the hidden non-veg.</p>
+        </article>
+        <article class="diff-card">
+          <h3>Grams mean nothing in the aisle.</h3>
+          <p>"18 g of sugar" is noise. "4½ teaspoons" is a decision. That's the only translation that matters.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 5. PRODUCT PREVIEW -->
+    <section class="preview reveal">
+      <h2 class="section-title">Show, don't tell.</h2>
+      <div class="phones" id="phones">
+        <!-- Scan screen -->
+        <div class="phone">
+          <div class="phone-screen scan-screen">
+            <div class="scan-viewfinder">
+              <div class="scan-frame"></div>
+              <div class="scan-laser"></div>
+            </div>
+            <p class="scan-instruction">Point at any barcode</p>
+            <span class="scan-manual">Enter barcode manually</span>
+          </div>
+          <p class="phone-label">Scan</p>
+        </div>
+
+        <!-- Result screen -->
+        <div class="phone">
+          <div class="phone-screen result-screen">
+            <p class="result-product">Parle-G Biscuits</p>
+            <div class="result-hero">
+              <span class="result-big">4½</span>
+              <span class="result-unit">tsp of sugar</span>
+            </div>
+            <p class="result-sub">in one serving</p>
+            <p class="swipe-label">Better picks →</p>
+            <div class="alt-row">
+              <div class="alt-card">
+                <strong>NutriChoice</strong>
+                <span>3 tsp less sugar</span>
+                <span class="alt-stars">★★★½</span>
+              </div>
+              <div class="alt-card">
+                <strong>Roasted Chana</strong>
+                <span>20 g protein</span>
+                <span class="alt-stars">★★★★</span>
+              </div>
+            </div>
+            <div class="chips">
+              <span class="chip chip-star">★ 1.0</span>
+              <span class="chip chip-nova">NOVA 4</span>
+              <span class="chip chip-warn">Marketing vs Reality</span>
+            </div>
+          </div>
+          <p class="phone-label">Result</p>
+        </div>
+
+        <!-- Dashboard screen -->
+        <div class="phone">
+          <div class="phone-screen dash-screen">
+            <p class="dash-takeaway">You're 80% through your sugar budget.</p>
+            <div class="dash-hero">
+              <span class="dash-big">8</span>
+              <span class="dash-of">of 10 tsp sugar</span>
+            </div>
+            <div class="bar"><span style="width:80%"></span></div>
+            <div class="mini-row">
+              <div class="mini"><strong>62%</strong><span>sodium</span></div>
+              <div class="mini"><strong>38g</strong><span>of 70g protein</span></div>
+              <div class="mini"><strong>12g</strong><span>fibre</span></div>
+            </div>
+            <div class="spark" aria-hidden="true">
+              <span style="height:30%"></span><span style="height:55%"></span>
+              <span style="height:40%"></span><span style="height:80%"></span>
+              <span style="height:60%"></span><span style="height:45%"></span>
+              <span style="height:80%"></span>
+            </div>
+            <p class="spark-label">Last 7 days</p>
+          </div>
+          <p class="phone-label">Dashboard</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CREDIBILITY -->
+    <section class="trust reveal">
+      <h2 class="trust-line">No invented scores.<br />No guessed numbers.</h2>
+      <p class="trust-sub">
+        Verified data comes from official checks. Community data is shown with a
+        confidence label until two photos of the same label agree. You never type
+        a number — you scan a barcode and snap the panel; we read it.
+      </p>
+    </section>
+
+    <!-- 7. FOOTER -->
+    <footer class="footer">
+      <p class="footer-line">Know it in teaspoons, not grams.</p>
+      <div class="store-badges">
+        <a class="store-badge" href="#get" aria-label="Download on the App Store">
+          <span class="store-sub">Download on the</span>
+          <span class="store-main"> App Store</span>
+        </a>
+        <a class="store-badge" href="#get" aria-label="Get it on Google Play">
+          <span class="store-sub">Get it on</span>
+          <span class="store-main"> Google Play</span>
+        </a>
+      </div>
+      <p class="footer-fine">
+        © 2026 TeaSpoon · Product data via Open Food Facts (CC BY-SA) ·
+        Health Star Rating © FSANZ
+      </p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

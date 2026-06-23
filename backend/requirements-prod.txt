@@ -1,0 +1,12 @@
+# Production-only dependencies. Install on the server in addition to
+# requirements.txt:  pip install -r requirements.txt -r requirements-prod.txt
+-r requirements.txt
+
+# PostgreSQL driver (PRD Section 11). Requires libpq on the build host.
+psycopg2-binary==2.9.10
+
+# Caching layer for popular barcodes (PRD Section 11).
+redis==5.2.1
+
+# Error tracking (GitHub Student Pack: Sentry).
+sentry-sdk[fastapi]==2.19.2
