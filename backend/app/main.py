@@ -34,11 +34,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS - explicit allow-list, never "*", and no credentialed wildcard.
+# CORS - when origins contains "*", credentials must be disabled (Starlette rule).
+_is_wildcard = settings.cors_origins == ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_credentials=not _is_wildcard,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-User-Id"],
 )
