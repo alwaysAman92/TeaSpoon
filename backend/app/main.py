@@ -55,10 +55,18 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+import traceback
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    # Generic message to the client; full detail stays in server logs / Sentry.
-    return JSONResponse(status_code=500, content={"detail": "Something went wrong."})
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Something went wrong.",
+            "error": str(exc),
+            "traceback": traceback.format_exc()
+        }
+    )
 
 
 @app.get("/health", tags=["meta"])
