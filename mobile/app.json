@@ -34,10 +34,13 @@
           "cameraPermission": "TeaSpoon uses the camera to scan product barcodes and read nutrition labels."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
-      "apiBaseUrl": "https://teaspoon-backend.onrender.com"
+      "apiBaseUrl": "https://teaspoon-backend-production.up.railway.app"
     }
   }
 }
