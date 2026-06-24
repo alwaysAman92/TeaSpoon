@@ -91,8 +91,9 @@ export const api = {
     });
   },
 
-  preview(barcode: string): Promise<ScanResult> {
-    return request<ScanResult>(`/scan/${encodeURIComponent(barcode)}`);
+  preview(barcode: string, date?: string): Promise<ScanResult> {
+    const qs = date ? `?date=${encodeURIComponent(date)}` : "";
+    return request<ScanResult>(`/scan/${encodeURIComponent(barcode)}${qs}`);
   },
 
   dashboard(date?: string): Promise<Dashboard> {

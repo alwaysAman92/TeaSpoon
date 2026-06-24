@@ -51,4 +51,34 @@
     const suffix = el.getAttribute("data-suffix") || "";
     el.textContent = prefix + target.toLocaleString("en-IN") + suffix;
   }
+
+  // --- Dark Mode Toggle ----------------------------------------------------
+  const themeToggleBtn = document.getElementById("theme-toggle");
+  if (themeToggleBtn) {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      document.body.classList.add("dark-mode");
+      themeToggleBtn.textContent = "☀️";
+      themeToggleBtn.setAttribute("aria-label", "Switch to light mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+      themeToggleBtn.textContent = "🌙";
+      themeToggleBtn.setAttribute("aria-label", "Switch to dark mode");
+    }
+
+    themeToggleBtn.addEventListener("click", () => {
+      const isDark = document.body.classList.toggle("dark-mode");
+      if (isDark) {
+        localStorage.setItem("theme", "dark");
+        themeToggleBtn.textContent = "☀️";
+        themeToggleBtn.setAttribute("aria-label", "Switch to light mode");
+      } else {
+        localStorage.setItem("theme", "light");
+        themeToggleBtn.textContent = "🌙";
+        themeToggleBtn.setAttribute("aria-label", "Switch to dark mode");
+      }
+    });
+  }
 })();

@@ -101,6 +101,7 @@ export interface NutrientProgress {
 }
 
 export interface RecentScan {
+  barcode: string;
   name: string;
   brand?: string | null;
   category: string;

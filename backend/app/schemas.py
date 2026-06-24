@@ -133,6 +133,7 @@ class NutrientProgressOut(BaseModel):
 
 
 class RecentScanOut(BaseModel):
+    barcode: str
     name: str
     brand: Optional[str] = None
     category: str

@@ -1,30 +1,142 @@
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path, G } from "react-native-svg";
 
+import { useApp } from "@/store/AppContext";
 import { colors, font, radius, shadow, space, weight } from "@/theme";
+
+function GoogleIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <G fill="none" fillRule="evenodd">
+        <Path
+          fill="#4285F4"
+          d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.69c-.29 1.5-.14 3.08-3.08 4.05v2.54h4.99c2.92-2.69 4.14-6.65 4.14-10.44z"
+        />
+        <Path
+          fill="#34A853"
+          d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-4.99-2.54c-1.39.93-3.17 1.48-4.97 1.48-4.83 0-8.91-3.26-10.37-7.64H2.43v2.62C4.43 20.35 7.94 24 12 24z"
+        />
+        <Path
+          fill="#FBBC05"
+          d="M1.63 12.39a14.28 14.28 0 0 1 0-4.78V4.99H2.43c-1.46 4.38-1.46 9.02 0 13.4l2.14-1.63L1.63 12.39z"
+        />
+        <Path
+          fill="#EA4335"
+          d="M12 4.75c1.77-.03 3.47.64 4.73 1.85l3.52-3.52C18.03 1.04 15.13.02 12 0 7.94 0 4.43 3.65 2.43 7.61L4.57 9.24C6.03 4.86 10.11 4.75 12 4.75z"
+        />
+      </G>
+    </Svg>
+  );
+}
+
+function AppleIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="#000000">
+      <Path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.17c.65-.79 1.09-1.9 1-3.01-1 .04-2.22.67-2.94 1.5-.64.74-1.2 1.87-1.04 2.97 1.12.09 2.27-.58 2.98-1.46Z" />
+    </Svg>
+  );
+}
+
+const ONBOARDING_SLIDES = [
+  {
+    key: "scan",
+    title: "Know your food\nin teaspoons",
+    subtitle: "Scan packet barcodes to instantly see sugar, sodium, and protein translated into simple teaspoons.",
+  },
+  {
+    key: "budget",
+    title: "Stay within your\ndaily budget",
+    subtitle: "Watch your day add up automatically. Stay under your daily limits and hit your protein target.",
+  },
+  {
+    key: "goals",
+    title: "Tailored to your\nhealth profile",
+    subtitle: "Choose health goals to automatically tighten daily limits for sugar and sodium.",
+  },
+];
+
+const GOAL_OPTIONS = [
+  { key: "diabetic", label: "Diabetic Focus", desc: "Caps daily sugar at 6 tsp", emoji: "🍬" },
+  { key: "hypertensive", label: "Sodium Limit", desc: "Caps daily sodium at 1500mg", emoji: "🧂" },
+  { key: "weight_goal", label: "Weight Goal", desc: "Prioritizes high-protein options", emoji: "🎯" },
+  { key: "allergy", label: "Allergy Alert", desc: "Warns about allergen ingredients", emoji: "⚠️" },
+];
 
 export function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, isLoaded: isSignInLoaded, setActive: setSignInActive } = useSignIn();
   const { signUp, isLoaded: isSignUpLoaded, setActive: setSignUpActive } = useSignUp();
+  const { settings, saveSettings } = useApp();
 
+  const [showGetStarted, setShowGetStarted] = useState(true);
+  const [slideIndex, setSlideIndex] = useState(0);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const healthFlags = settings?.health_flags ?? [];
+
+  const toggleHealthFlag = (flag: string) => {
+    const active = healthFlags.includes(flag);
+    const nextFlags = active
+      ? healthFlags.filter((f) => f !== flag)
+      : [...healthFlags, flag];
+    void saveSettings({ health_flags: nextFlags });
+  };
+
+  const goToSlide = (nextIndex: number) => {
+    if (nextIndex < 0 || nextIndex >= ONBOARDING_SLIDES.length) return;
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -30,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setSlideIndex(nextIndex);
+      slideAnim.setValue(30);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  };
 
   const handleContinue = async () => {
     if (!email.trim() || !email.includes("@")) {
@@ -39,14 +151,12 @@ export function SignInScreen() {
         throw new Error("Clerk authentication is not fully loaded. Please wait.");
       }
 
-      // 1. Try to start the Sign In process
       try {
         await signIn.create({ identifier: email.trim().toLowerCase() });
-        await signIn.prepareFirstFactor({ strategy: "email_code" });
+        await signIn.prepareFirstFactor({ strategy: "email_code" } as any);
         setVerifying(true);
         setMode("signin");
       } catch (err: any) {
-        // 2. If user doesn't exist, start Sign Up instead
         const code = err.errors?.[0]?.code;
         if (code === "form_identifier_not_found" || code === "user_not_found") {
           await signUp.create({ emailAddress: email.trim().toLowerCase() });
@@ -104,99 +214,318 @@ export function SignInScreen() {
     }
   };
 
+  const renderVisualMockup = () => {
+    switch (slideIndex) {
+      case 0:
+        return (
+          <View style={styles.mockCard}>
+            <View style={styles.mockHeader}>
+              <Text style={styles.mockProductTitle}>Parle-G Biscuits</Text>
+              <Text style={styles.mockProductSub}>1 serving (8 biscuits)</Text>
+            </View>
+            <View style={styles.mockHero}>
+              <Text style={styles.mockBigText}>4½</Text>
+              <Text style={styles.mockUnitText}>tsp of sugar</Text>
+            </View>
+            <View style={styles.mockChips}>
+              <View style={[styles.mockChip, { backgroundColor: colors.dangerSoft }]}>
+                <Text style={[styles.mockChipText, { color: colors.danger }]}>★ 1.0 HSR</Text>
+              </View>
+              <View style={[styles.mockChip, { backgroundColor: colors.surfaceSunken }]}>
+                <Text style={styles.mockChipText}>NOVA 4</Text>
+              </View>
+            </View>
+            <View style={styles.mockSwapCard}>
+              <Text style={styles.mockSwapLabel}>💡 Healthier swap suggestion</Text>
+              <View style={styles.mockSwapRow}>
+                <Text style={styles.mockSwapName}>NutriChoice</Text>
+                <Text style={styles.mockSwapDiff}>-3 tsp sugar</Text>
+              </View>
+            </View>
+          </View>
+        );
+      case 1:
+        return (
+          <View style={styles.mockCard}>
+            <View style={styles.mockHeader}>
+              <Text style={styles.mockProductTitle}>Daily Sugar Tracker</Text>
+              <Text style={styles.mockProductSub}>Tracked in real time</Text>
+            </View>
+            <View style={styles.mockHero}>
+              <Text style={styles.mockBigText}>8</Text>
+              <Text style={styles.mockUnitText}>of 10 tsp consumed</Text>
+            </View>
+            <View style={styles.mockProgressTrack}>
+              <View style={[styles.mockProgressFill, { width: "80%" }]} />
+            </View>
+            <Text style={styles.mockProgressWarning}>
+              ⚠️ 80% used. Consider low-sugar lunch.
+            </Text>
+            <View style={styles.mockGrid}>
+              <View style={styles.mockGridItem}>
+                <Text style={styles.mockGridLabel}>Sodium</Text>
+                <Text style={styles.mockGridValue}>62%</Text>
+              </View>
+              <View style={styles.mockGridItem}>
+                <Text style={styles.mockGridLabel}>Protein</Text>
+                <Text style={styles.mockGridValue}>38g</Text>
+              </View>
+            </View>
+          </View>
+        );
+      case 2:
+      default:
+        return (
+          <View style={styles.mockShieldContainer}>
+            <View style={styles.mockShieldOuter}>
+              <View style={styles.mockShieldInner}>
+                <Text style={styles.mockShieldEmoji}>🛡️</Text>
+              </View>
+            </View>
+            <View style={styles.mockShieldBadges}>
+              <View style={styles.mockShieldBadge}>
+                <Text style={styles.mockShieldBadgeText}>✓ Safe limits</Text>
+              </View>
+              <View style={styles.mockShieldBadge}>
+                <Text style={styles.mockShieldBadgeText}>✓ Smart recommendations</Text>
+              </View>
+            </View>
+          </View>
+        );
+    }
+  };
+
+  if (showGetStarted) {
+    return (
+      <View style={styles.onboardingContainer}>
+        {/* Upper Half: Mock visuals + logo overlay */}
+        <View style={[styles.onboardingTop, { paddingTop: insets.top + space.md }]}>
+          <Image
+            source={require("../../assets/onboarding_bg.png")}
+            style={styles.onboardingImg}
+            resizeMode="cover"
+          />
+          {/* Subtle overlay to soften the background */}
+          <View style={styles.onboardingOverlay} />
+
+          <View style={styles.onboardingLogoWrap}>
+            <Text style={styles.onboardingLogoText}>
+              <Text style={{ color: colors.accent }}>🥄</Text> TeaSpoon
+            </Text>
+          </View>
+
+          {/* Interactive visual preview */}
+          <Animated.View
+            style={[
+              styles.mockPreviewWrapper,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            {renderVisualMockup()}
+          </Animated.View>
+        </View>
+
+        {/* Lower Half: Interactive Content Card */}
+        <View style={[styles.onboardingCard, { paddingBottom: insets.bottom + space.lg }]}>
+          <ScrollView
+            style={styles.cardScroll}
+            contentContainerStyle={styles.cardScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.onboardingTitle}>
+              {ONBOARDING_SLIDES[slideIndex].title}
+            </Text>
+
+            {slideIndex !== 2 ? (
+              <Text style={styles.onboardingSubtitle}>
+                {ONBOARDING_SLIDES[slideIndex].subtitle}
+              </Text>
+            ) : (
+              <View style={styles.goalsContainer}>
+                {GOAL_OPTIONS.map((goal) => {
+                  const active = healthFlags.includes(goal.key);
+                  return (
+                    <Pressable
+                      key={goal.key}
+                      style={[styles.goalRow, active && styles.goalRowActive]}
+                      onPress={() => toggleHealthFlag(goal.key)}
+                    >
+                      <Text style={styles.goalEmoji}>{goal.emoji}</Text>
+                      <View style={styles.goalTextWrap}>
+                        <Text style={[styles.goalLabel, active && styles.goalLabelActive]}>
+                          {goal.label}
+                        </Text>
+                        <Text style={[styles.goalDesc, active && styles.goalDescActive]}>
+                          {goal.desc}
+                        </Text>
+                      </View>
+                      <View style={[styles.goalCheckbox, active && styles.goalCheckboxActive]}>
+                        {active && <Text style={styles.goalCheckIcon}>✓</Text>}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Carousel dots indicator */}
+          <View style={styles.onboardingDots}>
+            {ONBOARDING_SLIDES.map((_, idx) => (
+              <Pressable
+                key={idx}
+                style={[
+                  styles.onboardingDot,
+                  slideIndex === idx ? styles.onboardingDotActive : styles.onboardingDotInactive,
+                ]}
+                onPress={() => goToSlide(idx)}
+              />
+            ))}
+          </View>
+
+          {/* Large main action button */}
+          <Pressable
+            style={({ pressed }) => [styles.onboardingBtn, pressed && styles.onboardingBtnPressed]}
+            onPress={() => {
+              if (slideIndex < ONBOARDING_SLIDES.length - 1) {
+                goToSlide(slideIndex + 1);
+              } else {
+                setShowGetStarted(false);
+              }
+            }}
+          >
+            <Text style={styles.onboardingBtnText}>
+              {slideIndex === ONBOARDING_SLIDES.length - 1 ? "Get Started" : "Continue"}
+            </Text>
+          </Pressable>
+
+          {/* Social Sign-in row */}
+          <Text style={styles.onboardingSocialLabel}>Or sign in with</Text>
+          <View style={styles.onboardingSocialRow}>
+            <Pressable
+              style={({ pressed }) => [styles.onboardingSocialCircle, pressed && styles.onboardingSocialCirclePressed]}
+              onPress={() => setShowGetStarted(false)}
+            >
+              <GoogleIcon />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.onboardingSocialCircle, pressed && styles.onboardingSocialCirclePressed]}
+              onPress={() => setShowGetStarted(false)}
+            >
+              <AppleIcon />
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={[styles.inner, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.lg }]}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>🥄 TeaSpoon</Text>
-          <Text style={styles.subtitle}>Know it in teaspoons, not grams.</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        <View style={[styles.inner, { paddingTop: insets.top + space.xl, paddingBottom: insets.bottom + space.lg }]}>
+          <View style={styles.header}>
+            <Text style={styles.logo}>🥄 TeaSpoon</Text>
+            <Text style={styles.subtitle}>Know it in teaspoons, not grams.</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>
+              {verifying ? "Verify your email" : "Sign in or register"}
+            </Text>
+            <Text style={styles.cardDesc}>
+              {verifying
+                ? `We sent a 6-digit code to ${email}`
+                : "Enter your email address to log in or create a new TeaSpoon account."}
+            </Text>
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            {!verifying ? (
+              <View>
+                <TextInput
+                  style={styles.textInput}
+                  value={email}
+                  onChangeText={(txt) => {
+                    setEmail(txt);
+                    setError(null);
+                  }}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.inkFaint}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  editable={!loading}
+                />
+                <Pressable
+                  style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
+                  onPress={handleContinue}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={styles.buttonText}>Continue</Text>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  style={styles.backButton}
+                  onPress={() => {
+                    setShowGetStarted(true);
+                    setError(null);
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.backButtonText}>← Back to onboarding</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View>
+                <TextInput
+                  style={[styles.textInput, styles.codeInput]}
+                  value={code}
+                  onChangeText={(txt) => {
+                    setCode(txt);
+                    setError(null);
+                  }}
+                  placeholder="123456"
+                  placeholderTextColor={colors.inkFaint}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                  editable={!loading}
+                />
+                <Pressable
+                  style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
+                  onPress={handleVerify}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={styles.buttonText}>Verify Code</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  style={styles.backButton}
+                  onPress={() => {
+                    setVerifying(false);
+                    setCode("");
+                    setError(null);
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.backButtonText}>← Use a different email</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
         </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {verifying ? "Verify your email" : "Sign in or register"}
-          </Text>
-          <Text style={styles.cardDesc}>
-            {verifying
-              ? `We sent a 6-digit code to ${email}`
-              : "Enter your email address to log in or create a new TeaSpoon account."}
-          </Text>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-
-          {!verifying ? (
-            <View>
-              <TextInput
-                style={styles.textInput}
-                value={email}
-                onChangeText={(txt) => {
-                  setEmail(txt);
-                  setError(null);
-                }}
-                placeholder="you@example.com"
-                placeholderTextColor={colors.inkFaint}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                editable={!loading}
-              />
-              <Pressable
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
-                onPress={handleContinue}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.buttonText}>Continue</Text>
-                )}
-              </Pressable>
-            </View>
-          ) : (
-            <View>
-              <TextInput
-                style={[styles.textInput, styles.codeInput]}
-                value={code}
-                onChangeText={(txt) => {
-                  setCode(txt);
-                  setError(null);
-                }}
-                placeholder="123456"
-                placeholderTextColor={colors.inkFaint}
-                keyboardType="number-pad"
-                maxLength={6}
-                autoFocus
-                editable={!loading}
-              />
-              <Pressable
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, loading && styles.buttonDisabled]}
-                onPress={handleVerify}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.buttonText}>Verify Code</Text>
-                )}
-              </Pressable>
-              <Pressable
-                style={styles.backButton}
-                onPress={() => {
-                  setVerifying(false);
-                  setCode("");
-                  setError(null);
-                }}
-                disabled={loading}
-              >
-                <Text style={styles.backButtonText}>← Use a different email</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -206,6 +535,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   inner: {
     flex: 1,
     justifyContent: "center",
@@ -213,7 +546,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: space.xxl,
+    marginBottom: space.xl,
   },
   logo: {
     fontSize: font.h1 + 4,
@@ -257,7 +590,7 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: font.body,
     color: colors.ink,
     marginBottom: space.md,
@@ -298,4 +631,376 @@ const styles = StyleSheet.create({
     fontSize: font.small,
     fontWeight: weight.semibold,
   },
+
+  // Onboarding container
+  onboardingContainer: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  onboardingTop: {
+    flex: 1.2,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    position: "relative",
+  },
+  onboardingImg: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  onboardingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(27, 26, 23, 0.4)", // Dark overlay to make mockup readable
+  },
+  onboardingLogoWrap: {
+    marginTop: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  onboardingLogoText: {
+    fontSize: 28,
+    fontWeight: weight.black,
+    color: colors.white,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+
+  // Mock visuals styles
+  mockPreviewWrapper: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: space.lg,
+    marginTop: 20,
+    zIndex: 5,
+  },
+  mockCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: space.md,
+    width: "85%",
+    maxWidth: 320,
+    ...shadow.card,
+  },
+  mockHeader: {
+    marginBottom: space.sm,
+  },
+  mockProductTitle: {
+    fontSize: font.title,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+  mockProductSub: {
+    fontSize: font.small,
+    color: colors.inkSoft,
+    marginTop: 2,
+  },
+  mockHero: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginVertical: space.xs,
+  },
+  mockBigText: {
+    fontSize: font.hero - 15,
+    fontWeight: weight.black,
+    color: colors.accent,
+  },
+  mockUnitText: {
+    fontSize: font.body,
+    fontWeight: weight.bold,
+    color: colors.inkSoft,
+    marginLeft: 6,
+  },
+  mockChips: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: space.md,
+  },
+  mockChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  mockChipText: {
+    fontSize: font.tiny,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+  mockSwapCard: {
+    backgroundColor: colors.greenSoft,
+    borderRadius: radius.sm,
+    padding: space.sm,
+    borderWidth: 1,
+    borderColor: colors.green,
+  },
+  mockSwapLabel: {
+    fontSize: font.tiny,
+    color: colors.green,
+    fontWeight: weight.bold,
+  },
+  mockSwapRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  mockSwapName: {
+    fontSize: font.small,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+  mockSwapDiff: {
+    fontSize: font.small,
+    fontWeight: weight.bold,
+    color: colors.green,
+  },
+  mockProgressTrack: {
+    height: 10,
+    backgroundColor: colors.accentTrack,
+    borderRadius: 5,
+    marginVertical: space.xs,
+    overflow: "hidden",
+  },
+  mockProgressFill: {
+    height: "100%",
+    backgroundColor: colors.accent,
+  },
+  mockProgressWarning: {
+    fontSize: font.small,
+    fontWeight: weight.semibold,
+    color: colors.danger,
+    marginBottom: space.sm,
+  },
+  mockGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  mockGridItem: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    padding: space.xs,
+    borderRadius: radius.sm,
+    alignItems: "center",
+  },
+  mockGridLabel: {
+    fontSize: font.tiny,
+    color: colors.inkSoft,
+  },
+  mockGridValue: {
+    fontSize: font.body,
+    fontWeight: weight.bold,
+    color: colors.ink,
+    marginTop: 2,
+  },
+  mockShieldContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "85%",
+  },
+  mockShieldOuter: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(242, 137, 92, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mockShieldInner: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadow.floating,
+  },
+  mockShieldEmoji: {
+    fontSize: 38,
+  },
+  mockShieldBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  mockShieldBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    ...shadow.card,
+  },
+  mockShieldBadgeText: {
+    fontSize: font.small,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+
+  // Onboarding lower card
+  onboardingCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: space.lg,
+    paddingTop: space.lg,
+    alignItems: "center",
+    ...shadow.floating,
+    marginTop: -24,
+  },
+  cardScroll: {
+    width: "100%",
+    flex: 1,
+  },
+  cardScrollContent: {
+    alignItems: "center",
+    paddingBottom: space.md,
+  },
+  onboardingTitle: {
+    fontSize: 26,
+    fontWeight: weight.black,
+    color: colors.ink,
+    textAlign: "center",
+    lineHeight: 32,
+    marginBottom: space.sm,
+    marginTop: space.xs,
+  },
+  onboardingSubtitle: {
+    fontSize: font.body,
+    fontWeight: weight.medium,
+    color: colors.inkSoft,
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: space.xs,
+  },
+  onboardingDots: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+    marginVertical: space.sm,
+  },
+  onboardingDot: {
+    height: 8,
+    borderRadius: 4,
+  },
+  onboardingDotActive: {
+    width: 24,
+    backgroundColor: colors.accent,
+  },
+  onboardingDotInactive: {
+    width: 8,
+    backgroundColor: colors.inkFaint,
+    opacity: 0.4,
+  },
+  onboardingBtn: {
+    width: "100%",
+    backgroundColor: colors.dark,
+    borderRadius: radius.pill,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: space.xs,
+    ...shadow.floating,
+  },
+  onboardingBtnPressed: {
+    backgroundColor: colors.darkSoft,
+  },
+  onboardingBtnText: {
+    color: colors.white,
+    fontSize: font.body,
+    fontWeight: weight.bold,
+  },
+  onboardingSocialLabel: {
+    fontSize: font.small,
+    fontWeight: weight.semibold,
+    color: colors.inkSoft,
+    marginTop: space.md,
+    marginBottom: space.xs,
+  },
+  onboardingSocialRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: space.xs,
+  },
+  onboardingSocialCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadow.card,
+  },
+  onboardingSocialCirclePressed: {
+    backgroundColor: colors.surfaceSunken,
+  },
+
+  // Goals checklist interactive elements
+  goalsContainer: {
+    width: "100%",
+    marginTop: space.xs,
+    gap: 8,
+  },
+  goalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: space.md,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+  },
+  goalRowActive: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accent,
+  },
+  goalEmoji: {
+    fontSize: 22,
+    marginRight: 10,
+  },
+  goalTextWrap: {
+    flex: 1,
+  },
+  goalLabel: {
+    fontSize: font.body,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+  goalLabelActive: {
+    color: colors.accentDeep,
+  },
+  goalDesc: {
+    fontSize: font.tiny,
+    color: colors.inkSoft,
+    marginTop: 1,
+  },
+  goalDescActive: {
+    color: colors.ink,
+  },
+  goalCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.inkFaint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  goalCheckboxActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  goalCheckIcon: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: weight.bold,
+  },
 });
+

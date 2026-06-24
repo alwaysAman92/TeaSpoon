@@ -120,6 +120,7 @@ def _recent_scans(db: Session, user_id: int, day: dt.date, limit: int = 12) -> L
     out: List[RecentScanOut] = []
     for log, product in rows:
         out.append(RecentScanOut(
+            barcode=product.barcode,
             name=product.name,
             brand=product.brand,
             category=product.category,

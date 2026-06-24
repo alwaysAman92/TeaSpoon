@@ -101,3 +101,12 @@ def test_contribution_pipeline_confirms_on_matching_photos():
         )
         assert resp.status_code == 201
     assert resp.json()["trust_tier"] in ("pending", "confirmed")
+
+
+def test_preview_with_date_returns_dashboard_for_that_day():
+    resp = client.get("/scan/8901058822999?date=2026-06-20", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["found"] is True
+    assert data["dashboard"]["date"] == "2026-06-20"
+

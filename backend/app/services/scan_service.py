@@ -158,7 +158,14 @@ def _alternatives_for(
     ]
 
 
-def scan(db: Session, user: models.User, barcode: str, servings: float, log: bool) -> ScanResultOut:
+def scan(
+    db: Session,
+    user: models.User,
+    barcode: str,
+    servings: float,
+    log: bool,
+    day: Optional[dt.date] = None,
+) -> ScanResultOut:
     product = product_service.resolve_product(db, barcode)
     if product is None:
         # Section 11.1 step 3: not found -> prompt for one label photo.
@@ -173,7 +180,7 @@ def scan(db: Session, user: models.User, barcode: str, servings: float, log: boo
     if log:
         ledger_service.log_scan(db, user=user, product=product, servings=servings)
 
-    dashboard = ledger_service.build_dashboard(db, user)
+    dashboard = ledger_service.build_dashboard(db, user, day=day)
 
     return ScanResultOut(
         found=True,

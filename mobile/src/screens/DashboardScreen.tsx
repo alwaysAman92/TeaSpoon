@@ -1,8 +1,10 @@
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, type CompositeScreenProps } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,11 +18,14 @@ import { api } from "@/api/client";
 import { ProgressBar } from "@/components/ProgressBar";
 import { ScanCard } from "@/components/ScanCard";
 import { SemiGauge } from "@/components/SemiGauge";
-import type { TabsParamList } from "@/navigation";
+import type { RootStackParamList, TabsParamList } from "@/navigation";
 import { colors, font, radius, shadow, space, weight } from "@/theme";
 import type { Dashboard } from "@/types";
 
-type Props = BottomTabScreenProps<TabsParamList, "Dashboard">;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabsParamList, "Dashboard">,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 function isoOf(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -49,6 +54,23 @@ export function DashboardScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const [fetchingScanBarcode, setFetchingScanBarcode] = useState<string | null>(null);
+
+  const handleScanPress = useCallback(
+    async (barcode: string) => {
+      if (fetchingScanBarcode) return;
+      setFetchingScanBarcode(barcode);
+      try {
+        const result = await api.preview(barcode, selectedDate);
+        navigation.navigate("Result", { result });
+      } catch (err) {
+        Alert.alert("Error", "Failed to fetch product details. Please check your internet connection.");
+      } finally {
+        setFetchingScanBarcode(null);
+      }
+    },
+    [fetchingScanBarcode, navigation, selectedDate],
+  );
 
   const load = useCallback(async (date: string) => {
     try {
@@ -220,7 +242,14 @@ export function DashboardScreen({ navigation }: Props) {
         </View>
 
         {dashboard && dashboard.recent.length > 0 ? (
-          dashboard.recent.map((scan, i) => <ScanCard key={`${scan.name}-${i}`} scan={scan} />)
+          dashboard.recent.map((scan, i) => (
+            <ScanCard
+              key={`${scan.name}-${i}`}
+              scan={scan}
+              onPress={() => handleScanPress(scan.barcode)}
+              loading={fetchingScanBarcode === scan.barcode}
+            />
+          ))
         ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, font, radius, shadow, space, weight } from "@/theme";
 import type { RecentScan } from "@/types";
@@ -13,9 +13,18 @@ const CATEGORY_EMOJI: Record<string, string> = {
   general_food: "🍪",
 };
 
-export function ScanCard({ scan }: { scan: RecentScan }) {
+export function ScanCard({
+  scan,
+  onPress,
+  loading,
+}: {
+  scan: RecentScan;
+  onPress?: () => void;
+  loading?: boolean;
+}) {
+  const Container = onPress ? Pressable : View;
   return (
-    <View style={styles.card}>
+    <Container style={styles.card} onPress={onPress}>
       <View style={styles.thumb}>
         {scan.image_url ? (
           <Image source={{ uri: scan.image_url }} style={styles.thumbImg} />
@@ -37,10 +46,16 @@ export function ScanCard({ scan }: { scan: RecentScan }) {
       </View>
 
       <View style={styles.right}>
-        <Text style={styles.bigStat}>{round(scan.sugar_tsp)}</Text>
-        <Text style={styles.bigUnit}>tsp sugar</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.accent} style={styles.loader} />
+        ) : (
+          <>
+            <Text style={styles.bigStat}>{round(scan.sugar_tsp)}</Text>
+            <Text style={styles.bigUnit}>tsp sugar</Text>
+          </>
+        )}
       </View>
-    </View>
+    </Container>
   );
 }
 
@@ -94,4 +109,10 @@ const styles = StyleSheet.create({
   right: { alignItems: "flex-end", marginLeft: space.sm },
   bigStat: { color: colors.accent, fontSize: font.h1, fontWeight: weight.black, lineHeight: font.h1 },
   bigUnit: { color: colors.inkFaint, fontSize: font.tiny },
+  loader: {
+    height: font.h1,
+    minWidth: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

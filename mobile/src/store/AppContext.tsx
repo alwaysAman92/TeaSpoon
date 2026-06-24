@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/clerk-expo";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { api } from "@/api/client";
@@ -25,13 +26,43 @@ const DEFAULT_SETTINGS: Settings = {
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
+const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const useClerkAuth = CLERK_KEY
+  ? useAuth
+  : () => ({ isSignedIn: false, getToken: async () => null });
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { isSignedIn } = useClerkAuth();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [pendingSettings, setPendingSettings] = useState<Partial<Settings> | null>(null);
+
+  const saveSettings = useCallback(async (patch: Partial<Settings>) => {
+    if (!isSignedIn) {
+      // Save onboarding choices to pending settings while logged out
+      setPendingSettings((prev) => ({ ...prev, ...patch }));
+      setSettings((prev) => ({ ...(prev ?? DEFAULT_SETTINGS), ...patch }));
+      return;
+    }
+
+    // Optimistic update for authenticated user
+    setSettings((prev) => ({ ...(prev ?? DEFAULT_SETTINGS), ...patch }));
+    try {
+      const next = await api.updateSettings(patch);
+      setSettings(next);
+    } catch {
+      // Keep optimistic value; a later refresh reconciles
+    }
+  }, [isSignedIn]);
 
   const refreshSettings = useCallback(async () => {
     try {
-      const next = await api.getSettings();
+      let next = await api.getSettings();
+      // If we have pending onboarding settings, sync them now that we are authenticated
+      if (isSignedIn && pendingSettings && Object.keys(pendingSettings).length > 0) {
+        next = await api.updateSettings(pendingSettings);
+        setPendingSettings(null);
+      }
       setSettings(next);
     } catch {
       // Offline / backend down: fall back to sensible defaults.
@@ -39,22 +70,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoadingSettings(false);
     }
-  }, []);
-
-  const saveSettings = useCallback(async (patch: Partial<Settings>) => {
-    // Optimistic update so the toggle feels instant.
-    setSettings((prev) => ({ ...(prev ?? DEFAULT_SETTINGS), ...patch }));
-    try {
-      const next = await api.updateSettings(patch);
-      setSettings(next);
-    } catch {
-      // Keep the optimistic value; a later refresh reconciles.
-    }
-  }, []);
+  }, [isSignedIn, pendingSettings]);
 
   useEffect(() => {
     void refreshSettings();
-  }, [refreshSettings]);
+  }, [isSignedIn, refreshSettings]);
 
   const value = useMemo<AppState>(
     () => ({ settings, loadingSettings, refreshSettings, saveSettings }),
@@ -69,3 +89,4 @@ export function useApp(): AppState {
   if (!ctx) throw new Error("useApp must be used within AppProvider");
   return ctx;
 }
+

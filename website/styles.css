@@ -13,6 +13,19 @@
   --line: #e7ddcd;
   --maxw: 1120px;
   --r: 22px;
+  --card-bg: #ffffff;
+}
+
+body.dark-mode {
+  --ink: #fbf7f0;
+  --cream: #14110e;
+  --cream-2: #211c17;
+  --accent: #ff6e36;
+  --accent-soft: #42251a;
+  --green: #18be7e;
+  --muted: #a09384;
+  --line: #332d27;
+  --card-bg: #1c1815;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -167,7 +180,7 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
   gap: clamp(16px, 2.5vw, 26px);
 }
 .diff-card {
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid var(--line);
   border-radius: var(--r);
   padding: clamp(26px, 3.5vw, 40px);
@@ -189,13 +202,13 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
   width: 270px;
   height: 560px;
   border-radius: 38px;
-  background: var(--ink);
+  background: #14110e;
   border: 10px solid #0a0807;
   box-shadow: 0 30px 60px -22px rgba(0,0,0,0.45);
   padding: 26px 20px;
   display: flex;
   flex-direction: column;
-  color: var(--cream);
+  color: #fbf7f0;
   position: relative;
   overflow: hidden;
 }
@@ -240,7 +253,7 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
   display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0;
 }
 .alt-card strong { font-size: 0.82rem; }
-.alt-card span { font-size: 0.72rem; color: var(--muted); }
+.alt-card span { font-size: 0.72rem; color: #a09384; }
 .alt-stars { color: var(--accent) !important; }
 .chips { display: flex; gap: 7px; margin-top: auto; flex-wrap: wrap; }
 .chip { font-size: 0.68rem; padding: 5px 9px; border-radius: 999px; background: #2a241e; }
@@ -259,10 +272,10 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
 .mini-row { display: flex; gap: 8px; }
 .mini { background: #211c17; border-radius: 12px; padding: 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .mini strong { font-family: "Sora"; font-size: 1.05rem; }
-.mini span { font-size: 0.62rem; color: var(--muted); }
+.mini span { font-size: 0.62rem; color: #a09384; }
 .spark { display: flex; align-items: flex-end; gap: 7px; height: 70px; margin-top: 22px; }
 .spark span { flex: 1; background: linear-gradient(var(--accent), var(--accent-soft)); border-radius: 6px 6px 0 0; opacity: 0.85; }
-.spark-label { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+.spark-label { font-size: 0.72rem; color: #a09384; margin-top: 6px; }
 
 /* ---- Trust ---- */
 .trust { text-align: center; }
@@ -275,12 +288,13 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
 .store-badges { display: flex; gap: 16px; justify-content: center; margin: 34px 0 26px; flex-wrap: wrap; }
 .store-badge {
   display: flex; flex-direction: column; align-items: flex-start;
-  background: var(--ink); color: var(--cream);
+  background: #14110e; color: #fbf7f0;
   padding: 12px 24px; border-radius: 14px; text-decoration: none;
   transition: transform 0.15s ease;
 }
 .store-badge:hover { transform: translateY(-3px); }
 .store-sub { font-size: 0.7rem; opacity: 0.75; }
+.store-badge:nth-child(1) .store-sub, .store-badge:nth-child(2) .store-sub { color: #fbf7f0; opacity: 0.75; }
 .store-main { font-family: "Sora"; font-weight: 700; font-size: 1.15rem; }
 .footer-fine { color: var(--muted); font-size: 0.82rem; }
 
@@ -298,4 +312,36 @@ section { padding: clamp(64px, 11vw, 130px) 0; border-bottom: 1px solid var(--li
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
+}
+
+/* ---- Theme Toggle ---- */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 20px);
+}
+
+.theme-btn {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.25rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.theme-btn:hover {
+  background-color: var(--cream-2);
+  border-color: var(--ink);
+  transform: scale(1.08);
+}
+
+.theme-btn:active {
+  transform: scale(0.95);
 }
