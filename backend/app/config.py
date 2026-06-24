@@ -38,7 +38,7 @@ class Settings:
 
         # CORS - allow the local Expo dev server and the landing page origin.
         self.cors_origins: List[str] = _split(
-            os.getenv("CORS_ORIGINS", "http://localhost:8081,http://localhost:19006,http://localhost:5173")
+            os.getenv("CORS_ORIGINS", "http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085,http://localhost:19006,http://localhost:5173")
         )
 
         # OCR confidence below which a field is held back from going live.
