@@ -9,8 +9,11 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-prod.txt
 # Copy app code
 COPY . .
 
-# Seed the database with initial data
-RUN python -m app.seed
+# The app auto-seeds the DB on first startup via seed_if_empty() in main.py lifespan.
 
-# Railway sets PORT automatically
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Expose default port
+EXPOSE 8000
+
+# Railway injects PORT as an env var at runtime.
+# Using exec form with /bin/sh -c ensures proper variable expansion.
+CMD ["/bin/sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
