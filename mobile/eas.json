@@ -7,7 +7,9 @@
             "developmentClient": true,
             "distribution": "internal",
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+                "EXPO_PUBLIC_API_BASE_URL": "https://teaspoon-backend-production.up.railway.app",
+                "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_bWF4aW11bS1wZWFjb2NrLTYwLmNsZXJrLmFjY291bnRzLmRldiQ"
             }
         },
         "preview": {
@@ -16,12 +18,16 @@
                 "buildType": "apk"
             },
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+                "EXPO_PUBLIC_API_BASE_URL": "https://teaspoon-backend-production.up.railway.app",
+                "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_bWF4aW11bS1wZWFjb2NrLTYwLmNsZXJrLmFjY291bnRzLmRldiQ"
             }
         },
         "production": {
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+                "EXPO_PUBLIC_API_BASE_URL": "https://teaspoon-backend-production.up.railway.app",
+                "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_bWF4aW11bS1wZWFjb2NrLTYwLmNsZXJrLmFjY291bnRzLmRldiQ"
             }
         }
     },
