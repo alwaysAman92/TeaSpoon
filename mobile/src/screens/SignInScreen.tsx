@@ -152,8 +152,17 @@ export function SignInScreen() {
       }
 
       try {
-        await signIn.create({ identifier: email.trim().toLowerCase() });
-        await signIn.prepareFirstFactor({ strategy: "email_code" } as any);
+        const signInAttempt = await signIn.create({ identifier: email.trim().toLowerCase() });
+        const emailFactor = signInAttempt.supportedFirstFactors?.find(
+          (f: any) => f.strategy === "email_code"
+        );
+        if (!emailFactor || !("emailAddressId" in emailFactor)) {
+          throw new Error("Email verification is not supported for this account.");
+        }
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: (emailFactor as any).emailAddressId,
+        });
         setVerifying(true);
         setMode("signin");
       } catch (err: any) {
