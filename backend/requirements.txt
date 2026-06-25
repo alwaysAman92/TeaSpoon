@@ -10,5 +10,8 @@ pyjwt[crypto]==2.10.1
 # Dev / test
 pytest==8.3.4
 
+# Gemini API Integration
+google-genai>=2.10.0
+
 # NOTE: For production PostgreSQL, also install the driver from
 # requirements-prod.txt (psycopg2-binary). SQLite is used by default in dev.

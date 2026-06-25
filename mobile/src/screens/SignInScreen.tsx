@@ -169,7 +169,7 @@ export function SignInScreen() {
       }
     } catch (err: any) {
       console.error("Clerk init auth error:", err);
-      setError(err.errors?.[0]?.message || err.message || "Failed to send verification code.");
+      setError(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "Failed to send verification code.");
     } finally {
       setLoading(false);
     }
@@ -200,15 +200,17 @@ export function SignInScreen() {
         const res = await signUp.attemptEmailAddressVerification({
           code: code.trim(),
         });
+        console.log("SIGN UP RESULT:", JSON.stringify(res, null, 2));
         if (res.status === "complete") {
           await setSignUpActive({ session: res.createdSessionId });
         } else {
-          setError(`Sign up status: ${res.status}. Please check details.`);
+          const missing = (res as any).missingFields ? ` Missing: ${(res as any).missingFields.join(", ")}` : "";
+          setError(`Sign up status: ${res.status}.${missing}`);
         }
       }
     } catch (err: any) {
       console.error("Clerk verify code error:", err);
-      setError(err.errors?.[0]?.message || err.message || "Invalid verification code.");
+      setError(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || "Invalid verification code.");
     } finally {
       setLoading(false);
     }
@@ -218,78 +220,31 @@ export function SignInScreen() {
     switch (slideIndex) {
       case 0:
         return (
-          <View style={styles.mockCard}>
-            <View style={styles.mockHeader}>
-              <Text style={styles.mockProductTitle}>Parle-G Biscuits</Text>
-              <Text style={styles.mockProductSub}>1 serving (8 biscuits)</Text>
-            </View>
-            <View style={styles.mockHero}>
-              <Text style={styles.mockBigText}>4½</Text>
-              <Text style={styles.mockUnitText}>tsp of sugar</Text>
-            </View>
-            <View style={styles.mockChips}>
-              <View style={[styles.mockChip, { backgroundColor: colors.dangerSoft }]}>
-                <Text style={[styles.mockChipText, { color: colors.danger }]}>★ 1.0 HSR</Text>
-              </View>
-              <View style={[styles.mockChip, { backgroundColor: colors.surfaceSunken }]}>
-                <Text style={styles.mockChipText}>NOVA 4</Text>
-              </View>
-            </View>
-            <View style={styles.mockSwapCard}>
-              <Text style={styles.mockSwapLabel}>💡 Healthier swap suggestion</Text>
-              <View style={styles.mockSwapRow}>
-                <Text style={styles.mockSwapName}>NutriChoice</Text>
-                <Text style={styles.mockSwapDiff}>-3 tsp sugar</Text>
-              </View>
-            </View>
+          <View style={styles.simpleMockCard}>
+            <Text style={styles.simpleMockEmoji}>🥄</Text>
+            <Text style={styles.simpleMockBigText}>4.5 tsp</Text>
+            <Text style={styles.simpleMockSubText}>Average sugar in sweet snacks</Text>
           </View>
         );
       case 1:
         return (
-          <View style={styles.mockCard}>
-            <View style={styles.mockHeader}>
-              <Text style={styles.mockProductTitle}>Daily Sugar Tracker</Text>
-              <Text style={styles.mockProductSub}>Tracked in real time</Text>
-            </View>
-            <View style={styles.mockHero}>
-              <Text style={styles.mockBigText}>8</Text>
-              <Text style={styles.mockUnitText}>of 10 tsp consumed</Text>
+          <View style={styles.simpleMockCard}>
+            <View style={styles.simpleMockRow}>
+              <Text style={styles.simpleMockLabel}>Daily Sugar Budget</Text>
+              <Text style={styles.simpleMockValue}>6 / 10 tsp</Text>
             </View>
             <View style={styles.mockProgressTrack}>
-              <View style={[styles.mockProgressFill, { width: "80%" }]} />
-            </View>
-            <Text style={styles.mockProgressWarning}>
-              ⚠️ 80% used. Consider low-sugar lunch.
-            </Text>
-            <View style={styles.mockGrid}>
-              <View style={styles.mockGridItem}>
-                <Text style={styles.mockGridLabel}>Sodium</Text>
-                <Text style={styles.mockGridValue}>62%</Text>
-              </View>
-              <View style={styles.mockGridItem}>
-                <Text style={styles.mockGridLabel}>Protein</Text>
-                <Text style={styles.mockGridValue}>38g</Text>
-              </View>
+              <View style={[styles.mockProgressFill, { width: "60%" }]} />
             </View>
           </View>
         );
       case 2:
       default:
         return (
-          <View style={styles.mockShieldContainer}>
-            <View style={styles.mockShieldOuter}>
-              <View style={styles.mockShieldInner}>
-                <Text style={styles.mockShieldEmoji}>🛡️</Text>
-              </View>
-            </View>
-            <View style={styles.mockShieldBadges}>
-              <View style={styles.mockShieldBadge}>
-                <Text style={styles.mockShieldBadgeText}>✓ Safe limits</Text>
-              </View>
-              <View style={styles.mockShieldBadge}>
-                <Text style={styles.mockShieldBadgeText}>✓ Smart recommendations</Text>
-              </View>
-            </View>
+          <View style={styles.simpleMockCard}>
+            <Text style={styles.simpleMockEmoji}>🎯</Text>
+            <Text style={styles.simpleMockBigText}>Personalized</Text>
+            <Text style={styles.simpleMockSubText}>Tailored to your health flags</Text>
           </View>
         );
     }
@@ -297,47 +252,36 @@ export function SignInScreen() {
 
   if (showGetStarted) {
     return (
-      <View style={styles.onboardingContainer}>
-        {/* Upper Half: Mock visuals + logo overlay */}
-        <View style={[styles.onboardingTop, { paddingTop: insets.top + space.md }]}>
-          <Image
-            source={require("../../assets/onboarding_bg.png")}
-            style={styles.onboardingImg}
-            resizeMode="cover"
-          />
-          {/* Subtle overlay to soften the background */}
-          <View style={styles.onboardingOverlay} />
-
-          <View style={styles.onboardingLogoWrap}>
-            <Text style={styles.onboardingLogoText}>
-              <Text style={{ color: colors.accent }}>🥄</Text> TeaSpoon
-            </Text>
-          </View>
-
-          {/* Interactive visual preview */}
-          <Animated.View
-            style={[
-              styles.mockPreviewWrapper,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            {renderVisualMockup()}
-          </Animated.View>
+      <View style={styles.simpleOnboardingContainer}>
+        {/* Logo and Tagline */}
+        <View style={[styles.simpleOnboardingHeader, { paddingTop: insets.top + space.xl }]}>
+          <Text style={styles.simpleOnboardingLogo}>🥄 TeaSpoon</Text>
+          <Text style={styles.simpleOnboardingTagline}>Know it in teaspoons, not grams</Text>
         </View>
 
-        {/* Lower Half: Interactive Content Card */}
-        <View style={[styles.onboardingCard, { paddingBottom: insets.bottom + space.lg }]}>
+        {/* Dynamic visual preview */}
+        <Animated.View
+          style={[
+            styles.simpleVisualWrapper,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+          ]}
+        >
+          {renderVisualMockup()}
+        </Animated.View>
+
+        {/* Content Area */}
+        <View style={styles.simpleContentWrapper}>
           <ScrollView
             style={styles.cardScroll}
             contentContainerStyle={styles.cardScrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.onboardingTitle}>
-              {ONBOARDING_SLIDES[slideIndex].title}
+            <Text style={styles.simpleOnboardingTitle}>
+              {ONBOARDING_SLIDES[slideIndex].title.replace("\n", " ")}
             </Text>
 
             {slideIndex !== 2 ? (
-              <Text style={styles.onboardingSubtitle}>
+              <Text style={styles.simpleOnboardingSubtitle}>
                 {ONBOARDING_SLIDES[slideIndex].subtitle}
               </Text>
             ) : (
@@ -368,7 +312,10 @@ export function SignInScreen() {
               </View>
             )}
           </ScrollView>
+        </View>
 
+        {/* Footer Area */}
+        <View style={[styles.simpleOnboardingFooter, { paddingBottom: insets.bottom + space.lg }]}>
           {/* Carousel dots indicator */}
           <View style={styles.onboardingDots}>
             {ONBOARDING_SLIDES.map((_, idx) => (
@@ -387,9 +334,11 @@ export function SignInScreen() {
           <Pressable
             style={({ pressed }) => [styles.onboardingBtn, pressed && styles.onboardingBtnPressed]}
             onPress={() => {
+              console.log("GET STARTED BUTTON TAPPED, slideIndex:", slideIndex);
               if (slideIndex < ONBOARDING_SLIDES.length - 1) {
                 goToSlide(slideIndex + 1);
               } else {
+                console.log("Setting showGetStarted to false!");
                 setShowGetStarted(false);
               }
             }}
@@ -399,22 +348,15 @@ export function SignInScreen() {
             </Text>
           </Pressable>
 
-          {/* Social Sign-in row */}
-          <Text style={styles.onboardingSocialLabel}>Or sign in with</Text>
-          <View style={styles.onboardingSocialRow}>
-            <Pressable
-              style={({ pressed }) => [styles.onboardingSocialCircle, pressed && styles.onboardingSocialCirclePressed]}
-              onPress={() => setShowGetStarted(false)}
-            >
-              <GoogleIcon />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.onboardingSocialCircle, pressed && styles.onboardingSocialCirclePressed]}
-              onPress={() => setShowGetStarted(false)}
-            >
-              <AppleIcon />
-            </Pressable>
-          </View>
+          {/* Skip / Sign in Option */}
+          <Pressable
+            onPress={() => setShowGetStarted(false)}
+            style={styles.simpleOnboardingSkip}
+          >
+            <Text style={styles.simpleOnboardingSkipText}>
+              Already have an account? Sign In
+            </Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -1000,6 +942,113 @@ const styles = StyleSheet.create({
   goalCheckIcon: {
     color: colors.white,
     fontSize: 12,
+    fontWeight: weight.bold,
+  },
+
+  // Simplified Onboarding Styles
+  simpleOnboardingContainer: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    paddingHorizontal: space.lg,
+  },
+  simpleOnboardingHeader: {
+    alignItems: "center",
+    marginBottom: space.lg,
+  },
+  simpleOnboardingLogo: {
+    fontSize: font.h1,
+    fontWeight: weight.black,
+    color: colors.ink,
+    letterSpacing: -0.5,
+  },
+  simpleOnboardingTagline: {
+    fontSize: font.small,
+    color: colors.inkSoft,
+    fontWeight: weight.semibold,
+    marginTop: space.xs,
+  },
+  simpleVisualWrapper: {
+    height: 140,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: space.md,
+  },
+  simpleMockCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    padding: space.md,
+    width: "100%",
+    maxWidth: 320,
+    alignItems: "center",
+    ...shadow.card,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  simpleMockEmoji: {
+    fontSize: font.big,
+    marginBottom: space.xs,
+  },
+  simpleMockBigText: {
+    fontSize: font.h2,
+    fontWeight: weight.black,
+    color: colors.accent,
+  },
+  simpleMockSubText: {
+    fontSize: font.small,
+    color: colors.inkSoft,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  simpleMockRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: space.xs,
+  },
+  simpleMockLabel: {
+    fontSize: font.body,
+    fontWeight: weight.bold,
+    color: colors.ink,
+  },
+  simpleMockValue: {
+    fontSize: font.body,
+    fontWeight: weight.bold,
+    color: colors.accent,
+  },
+  simpleContentWrapper: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  simpleOnboardingTitle: {
+    fontSize: font.h2,
+    fontWeight: weight.black,
+    color: colors.ink,
+    textAlign: "center",
+    lineHeight: 28,
+    marginBottom: space.sm,
+  },
+  simpleOnboardingSubtitle: {
+    fontSize: font.body,
+    fontWeight: weight.medium,
+    color: colors.inkSoft,
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: space.sm,
+  },
+  simpleOnboardingFooter: {
+    alignItems: "center",
+    width: "100%",
+    marginTop: space.md,
+  },
+  simpleOnboardingSkip: {
+    marginTop: space.md,
+    paddingVertical: space.xs,
+  },
+  simpleOnboardingSkipText: {
+    color: colors.inkSoft,
+    fontSize: font.small,
     fontWeight: weight.bold,
   },
 });

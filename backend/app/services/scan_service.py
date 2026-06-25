@@ -16,6 +16,7 @@ from ..core import hsr as hsr_core
 from ..core import ingredients as ing_core
 from ..core import nova as nova_core
 from ..core import translation as tr_core
+from ..core.serving_helper import get_serving_presets
 from ..core.alternatives import AltCandidate, rank_alternatives
 from ..schemas import (
     AdditiveOut,
@@ -117,10 +118,10 @@ def build_detail_layer(product: models.Product, hsr_result: hsr_core.HSRResult) 
     )
 
 
-def _translation_for(product: models.Product, user: models.User) -> List[TranslatedNutrientOut]:
+def _translation_for(product: models.Product, user: models.User, servings: float = 1.0) -> List[TranslatedNutrientOut]:
     sodium_limit = user.target_sodium_mg or constants.WHO_SODIUM_LIMIT_MG
     protein_target = user.target_protein_g or constants.DEFAULT_DAILY_TARGETS["protein_g"]
-    factor = (product.serving_size_g or 100.0) / 100.0
+    factor = (product.serving_size_g or 100.0) / 100.0 * max(0.0, servings)
     t = tr_core.translate(
         sugar_g=product.sugar_g * factor,
         sodium_mg=product.sodium_mg * factor,
@@ -186,9 +187,11 @@ def scan(
         found=True,
         product=ProductOut.model_validate(product),
         headline_nutrient=_headline_key(product),
-        translation=_translation_for(product, user),
+        translation=_translation_for(product, user, servings),
         alternatives=_alternatives_for(db, product, hsr_result.stars, user.alternatives_priority),
         detail=build_detail_layer(product, hsr_result),
         dashboard=dashboard,
         trust_tier=product.trust_tier,
+        needs_serving_input=product.needs_serving_input,
+        serving_presets=get_serving_presets(product.name, category=product.category) if product.needs_serving_input else [],
     )

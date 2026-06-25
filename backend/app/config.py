@@ -10,6 +10,10 @@ import os
 from functools import lru_cache
 from typing import List
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class Settings:
     def __init__(self) -> None:
@@ -34,6 +38,7 @@ class Settings:
 
         # OCR + auth provider keys come from the environment only.
         self.gcv_api_key: str = os.getenv("GOOGLE_CLOUD_VISION_API_KEY", "")
+        self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
         self.clerk_secret_key: str = os.getenv("CLERK_SECRET_KEY", "")
 
         # CORS - allow the local Expo dev server and the landing page origin.

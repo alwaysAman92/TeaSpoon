@@ -50,3 +50,14 @@ HEADLINE_NUTRIENT_BY_CATEGORY = {
     "fats_oils": "saturated_fat",
     "cheese": "sodium",
 }
+
+
+# Categories where serving size varies by use and must be asked, rather than
+# assumed or defaulted. Maps category key -> list of quick-select presets
+# (label, grams) plus a flag allowing custom gram entry.
+VARIABLE_SERVING_CATEGORIES: dict[str, list[tuple[str, float]]] = {
+    "spreads": [("1 tsp", 5.0), ("1 tbsp", 15.0), ("2 tbsp", 30.0)],
+    "jams_honey": [("1 tsp", 5.0), ("1 tbsp", 15.0), ("2 tbsp", 30.0)],
+    "oils_ghee": [("1 tsp", 5.0), ("1 tbsp", 15.0), ("2 tbsp", 30.0)],
+    "sauces_condiments": [("1 tsp", 5.0), ("1 tbsp", 15.0), ("2 tbsp", 30.0)],
+}

@@ -111,6 +111,16 @@ def analyse_ingredients(
     ingredients_text: str,
     declared_veg: Optional[bool] = None,
 ) -> IngredientReport:
+    # If ingredient text is missing or only whitespace, we cannot determine veg status.
+    if not (ingredients_text or "").strip():
+        return IngredientReport(
+            additives=[],
+            non_veg_flags=[],
+            veg_status="unknown",
+            note="Ingredient list not available -- cannot determine.",
+            allergens_detected=[],
+        )
+
     text = (ingredients_text or "").lower()
 
     additives: List[AdditiveExplanation] = []

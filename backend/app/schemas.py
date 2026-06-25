@@ -14,6 +14,9 @@ class ProductBase(BaseModel):
     brand: Optional[str] = None
     category: str = "general_food"
     image_url: Optional[str] = None
+    source: Optional[str] = None
+    source_url: Optional[str] = None
+    needs_serving_input: bool = False
 
     is_beverage: bool = False
     is_dairy: bool = False
@@ -76,7 +79,7 @@ class HSROut(BaseModel):
 
 
 class NovaOut(BaseModel):
-    group: int
+    group: Optional[int]
     label: str
     tag: str
     rationale: str
@@ -167,6 +170,8 @@ class ScanResultOut(BaseModel):
     trust_tier: Optional[str] = None
     needs_photo: bool = False
     message: Optional[str] = None
+    needs_serving_input: bool = False
+    serving_presets: List[dict] = Field(default_factory=list)
 
 
 # --- Requests ---------------------------------------------------------------

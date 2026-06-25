@@ -10,6 +10,7 @@ from typing import Optional
 import httpx
 
 from ..config import get_settings
+from ..core.serving_helper import needs_serving_input
 from ..schemas import ProductBase
 
 settings = get_settings()
@@ -58,11 +59,24 @@ def fetch_product(barcode: str) -> Optional[ProductBase]:
         return None
 
     payload = resp.json()
-    if payload.get("status") != 1 and not payload.get("product"):
+    # Return None if the API indicates failure or if no product data is present.
+    if payload.get("status") != 1:
+        return None
+    if not payload.get("product"):
         return None
 
     p = payload.get("product", {})
-    nutr = p.get("nutriments", {})
+    nutr = p.get("nutriments", {}) or {}
+
+    # Required fields check: treat the product as not-found if essential nutrients are missing
+    if (
+        nutr.get("sugars_100g") is None
+        or nutr.get("proteins_100g") is None
+        or nutr.get("saturated-fat_100g") is None
+        or (nutr.get("sodium_100g") is None and nutr.get("salt_100g") is None)
+    ):
+        return None
+
     tags = p.get("categories_tags", []) or []
     is_beverage, is_dairy, is_fat, is_cheese = _category(tags)
 
@@ -82,12 +96,16 @@ def fetch_product(barcode: str) -> Optional[ProductBase]:
     elif "non-vegetarian" in veg_tags or "meat" in veg_tags:
         declared_veg = False
 
+    product_name_str = p.get("product_name") or p.get("generic_name") or ""
+    serving_input_needed = needs_serving_input(product_name_str, tags)
+
     return ProductBase(
         barcode=str(barcode),
-        name=p.get("product_name") or p.get("generic_name") or f"Product {barcode}",
+        name=product_name_str or f"Product {barcode}",
         brand=(p.get("brands") or "").split(",")[0].strip() or None,
         category=_category_key(is_beverage, is_dairy, is_fat, is_cheese),
         image_url=p.get("image_front_url") or p.get("image_url"),
+        needs_serving_input=serving_input_needed,
         is_beverage=is_beverage,
         is_dairy=is_dairy,
         is_fat_or_oil=is_fat,

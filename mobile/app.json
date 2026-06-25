@@ -24,7 +24,9 @@
     "android": {
       "package": "app.teaspoon.mobile",
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -40,7 +42,10 @@
       "expo-web-browser"
     ],
     "extra": {
-      "apiBaseUrl": "https://teaspoon-backend-production.up.railway.app"
+      "apiBaseUrl": "https://teaspoon-backend-production.up.railway.app",
+      "eas": {
+        "projectId": "35423e47-17ca-4cd9-b1b0-3bb0c5e403bf"
+      }
     }
   }
 }

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..schemas import ProductBase
-from . import off_client
+from . import gemini_client, off_client
 
 
 def get_by_barcode(db: Session, barcode: str) -> Optional[models.Product]:
@@ -34,6 +34,7 @@ def upsert_from_base(
     """Insert or update a product, recording an immutable version snapshot."""
     existing = get_by_barcode(db, data.barcode)
     payload = data.model_dump()
+    payload.pop("source", None)
 
     if existing is None:
         product = models.Product(**payload, trust_tier=trust_tier, source=source)
@@ -82,12 +83,28 @@ def _record_version(db: Session, product: models.Product, *, source: str, note: 
 
 
 def resolve_product(db: Session, barcode: str) -> Optional[models.Product]:
-    """DB first, then Open Food Facts (cached into the DB on hit)."""
+    """DB first, then Open Food Facts, then Gemini brand-site lookup."""
     product = get_by_barcode(db, barcode)
     if product is not None:
         return product
 
     off_data = off_client.fetch_product(barcode)
-    if off_data is None:
-        return None
-    return upsert_from_base(db, off_data, source="off", trust_tier="pending", note="off-fetch")
+    if off_data is not None:
+        return upsert_from_base(db, off_data, source="off", trust_tier="pending", note="off-fetch")
+
+    # NEW: Gemini brand-website fallback
+    gemini_data = gemini_client.fetch_from_brand_site(
+        product_name=f"product with barcode {barcode}",
+        brand=None,
+        barcode=barcode,
+    )
+    if gemini_data is not None:
+        return upsert_from_base(
+            db,
+            gemini_data,
+            source="gemini_grounded",
+            trust_tier="pending",
+            note="gemini-grounded-fetch",
+        )
+
+    return None

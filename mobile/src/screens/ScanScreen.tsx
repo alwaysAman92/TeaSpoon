@@ -46,6 +46,16 @@ export function ScanScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const lockRef = useRef(false);
 
+  // Variable serving state
+  const [pendingScan, setPendingScan] = useState<{
+    barcode: string;
+    productName: string;
+    servingPresets: Array<{ label: string; grams: number }>;
+    defaultServingSize: number;
+  } | null>(null);
+  const [customGrams, setCustomGrams] = useState("");
+  const [selectedPresetIdx, setSelectedPresetIdx] = useState<number | null>(null);
+
   const handleBarcode = useCallback(
     async (code: string) => {
       if (lockRef.current) return;
@@ -53,9 +63,21 @@ export function ScanScreen({ navigation }: Props) {
       setBusy(true);
       setError(null);
       try {
-        const result = await api.scan(code, { log: true });
-        navigation.navigate("Result", { result });
-      } catch {
+        const previewResult = await api.preview(code);
+        if (previewResult.found && previewResult.needs_serving_input) {
+          setPendingScan({
+            barcode: code,
+            productName: previewResult.product?.name ?? `Product ${code}`,
+            servingPresets: previewResult.serving_presets ?? [],
+            defaultServingSize: previewResult.product?.serving_size_g ?? 100.0,
+          });
+          setCustomGrams("");
+          setSelectedPresetIdx(null);
+        } else {
+          const result = await api.scan(code, { log: true });
+          navigation.navigate("Result", { result });
+        }
+      } catch (err) {
         setError("Couldn't reach the server. Is the API running on :8000?");
       } finally {
         setBusy(false);
@@ -104,6 +126,94 @@ export function ScanScreen({ navigation }: Props) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
+
+  if (pendingScan) {
+    return (
+      <ScrollView
+        style={styles.lightScreen}
+        contentContainerStyle={{
+          paddingTop: insets.top + space.xl,
+          paddingHorizontal: space.lg,
+          paddingBottom: insets.bottom + space.xl,
+          flexGrow: 1,
+          justifyContent: "center",
+        }}
+      >
+        <View style={styles.panel}>
+          <Text style={styles.servingTitle}>How much are you having?</Text>
+          <Text style={styles.servingProduct}>{pendingScan.productName}</Text>
+
+          <Text style={styles.servingSectionLabel}>Choose a serving size:</Text>
+          <View style={styles.presetsRow}>
+            {pendingScan.servingPresets.map((preset, idx) => (
+              <Chip
+                key={idx}
+                label={`${preset.label} (${preset.grams}g)`}
+                active={selectedPresetIdx === idx}
+                tone={selectedPresetIdx === idx ? "warn" : "neutral"}
+                onPress={() => {
+                  setSelectedPresetIdx(idx);
+                  setCustomGrams(String(preset.grams));
+                }}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.servingSectionLabel}>Or enter custom amount (grams):</Text>
+          <TextInput
+            style={styles.input}
+            value={customGrams}
+            onChangeText={(txt) => {
+              setCustomGrams(txt);
+              setSelectedPresetIdx(null);
+            }}
+            keyboardType="numeric"
+            placeholder={`Default: ${pendingScan.defaultServingSize}g`}
+            placeholderTextColor={colors.inkFaint}
+          />
+
+          <Pressable
+            style={[styles.primaryBtn, { marginTop: space.lg, width: "100%" }]}
+            onPress={async () => {
+              const grams = parseFloat(customGrams) || pendingScan.defaultServingSize;
+              const servings = grams / pendingScan.defaultServingSize;
+              setBusy(true);
+              setError(null);
+              try {
+                const result = await api.scan(pendingScan.barcode, { servings, log: true });
+                setPendingScan(null);
+                navigation.navigate("Result", { result });
+              } catch {
+                setError("Failed to log scan. Please try again.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.primaryBtnText}>Log this scan</Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={styles.cancelBtn}
+            onPress={() => {
+              setPendingScan(null);
+              setError(null);
+            }}
+            disabled={busy}
+          >
+            <Text style={styles.cancelBtnText}>Cancel</Text>
+          </Pressable>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+        </View>
+      </ScrollView>
+    );
+  }
 
   // --- Web: never access the webcam. Manual entry + quick picks only. ------
   if (isWeb) {
@@ -246,4 +356,10 @@ const styles = StyleSheet.create({
   },
   manualLink: { color: colors.onDark, textDecorationLine: "underline", fontSize: font.body },
   error: { color: colors.danger, marginTop: space.sm },
+  servingTitle: { fontSize: font.h2, fontWeight: weight.black, color: colors.ink, textAlign: "center", marginBottom: space.xs },
+  servingProduct: { fontSize: font.body, color: colors.inkSoft, textAlign: "center", marginBottom: space.lg, fontWeight: weight.medium },
+  servingSectionLabel: { fontSize: font.small, color: colors.inkSoft, fontWeight: weight.bold, marginTop: space.md, marginBottom: space.sm },
+  presetsRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: space.xs },
+  cancelBtn: { alignItems: "center", marginTop: space.md, paddingVertical: space.xs },
+  cancelBtnText: { color: colors.inkSoft, fontSize: font.body, fontWeight: weight.bold },
 });

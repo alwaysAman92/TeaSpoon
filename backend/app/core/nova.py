@@ -37,7 +37,7 @@ class NovaGroup(int):
 
 @dataclass(frozen=True)
 class NovaResult:
-    group: int  # 1..4
+    group: Optional[int]  # 1..4 or None for unknown
     label: str
     tag: str    # short chip text for the result card
     rationale: str
@@ -69,6 +69,14 @@ def classify_nova(
     """Classify a product into a NOVA group."""
     if off_nova_group in (1, 2, 3, 4):
         return _result(int(off_nova_group))
+
+    # If no OFF nova group and no ingredient information, classification is unknown.
+    if off_nova_group is None:
+        # ingredients_text may be None or empty/whitespace only, and ingredients_list may be None or empty.
+        txt = (ingredients_text or "").strip()
+        lst = ingredients_list or []
+        if not txt and len(lst) == 0:
+            return NovaResult(group=None, label="Unknown", tag="NOVA · Unknown", rationale="Not enough ingredient data to classify processing level.")
 
     text = (ingredients_text or "").lower()
     tokens = ingredients_list or [t.strip() for t in text.replace(";", ",").split(",") if t.strip()]

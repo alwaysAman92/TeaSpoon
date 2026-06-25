@@ -15,6 +15,7 @@ export interface Product {
   serving_size_g: number;
   price_inr?: number | null;
   trust_tier: string;
+  needs_serving_input?: boolean;
 }
 
 export interface TranslatedNutrient {
@@ -133,6 +134,8 @@ export interface ScanResult {
   trust_tier?: string | null;
   needs_photo: boolean;
   message?: string | null;
+  needs_serving_input?: boolean;
+  serving_presets?: Array<{ label: string; grams: number }>;
 }
 
 export interface Settings {

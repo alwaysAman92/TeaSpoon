@@ -101,6 +101,8 @@ class Product(Base):
     # Section 10 trust tier: verified | confirmed | pending
     trust_tier: Mapped[str] = mapped_column(String(16), default="pending")
     source: Mapped[str] = mapped_column(String(32), default="seed")
+    source_url: Mapped[Optional[str]] = mapped_column(String(400), nullable=True)
+    needs_serving_input: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[dt.datetime] = mapped_column(
