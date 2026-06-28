@@ -119,6 +119,7 @@ def fetch_product(barcode: str) -> Optional[ProductBase]:
         fibre_g=_num(nutr.get("fiber_100g")),
         fvnl_percent=_num(nutr.get("fruits-vegetables-nuts-estimate-from-ingredients_100g")),
         serving_size_g=_num(p.get("serving_quantity"), 100.0) or 100.0,
+        package_weight_g=_num(p.get("product_quantity"), None),
         front_of_pack_text=p.get("product_name") or "",
         ingredients_text=p.get("ingredients_text") or "",
         declared_veg=declared_veg,

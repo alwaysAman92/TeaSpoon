@@ -91,6 +91,7 @@ class Product(Base):
     fvnl_percent: Mapped[float] = mapped_column(Float, default=0.0)
 
     serving_size_g: Mapped[float] = mapped_column(Float, default=100.0)
+    package_weight_g: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     price_inr: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     front_of_pack_text: Mapped[str] = mapped_column(Text, default="")

@@ -13,6 +13,7 @@ export interface Product {
   protein_g: number;
   fibre_g: number;
   serving_size_g: number;
+  package_weight_g?: number | null;
   price_inr?: number | null;
   trust_tier: string;
   needs_serving_input?: boolean;

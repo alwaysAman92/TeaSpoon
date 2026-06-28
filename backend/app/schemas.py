@@ -34,6 +34,7 @@ class ProductBase(BaseModel):
     fvnl_percent: float = 0.0
 
     serving_size_g: float = 100.0
+    package_weight_g: Optional[float] = None
     price_inr: Optional[float] = None
     front_of_pack_text: str = ""
     ingredients_text: str = ""

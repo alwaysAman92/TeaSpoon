@@ -24,6 +24,7 @@ export function ResultScreen({ route, navigation }: Props) {
   const { result } = route.params;
   const [showDetail, setShowDetail] = useState(false);
   const [reported, setReported] = useState(false);
+  const [viewMode, setViewMode] = useState<"serving" | "pack">("serving");
 
   const headline = useMemo(() => {
     const key = result.headline_nutrient ?? "sugar";
@@ -51,9 +52,30 @@ export function ResultScreen({ route, navigation }: Props) {
   const detail = result.detail;
   const trust = TRUST_LABEL[result.trust_tier ?? product.trust_tier] ?? "Unconfirmed";
 
+  const hasPackSize = !!(
+    product.package_weight_g &&
+    product.serving_size_g &&
+    product.package_weight_g > product.serving_size_g
+  );
+
+  const multiplier = useMemo(() => {
+    if (viewMode === "pack" && hasPackSize) {
+      return product.package_weight_g! / product.serving_size_g;
+    }
+    return 1;
+  }, [viewMode, hasPackSize, product.package_weight_g, product.serving_size_g]);
+
   const heroParts = (headline?.headline ?? "").split(" ");
-  const heroNumber = heroParts[0] ?? "";
+  const heroNumberRaw = heroParts[0] ?? "";
   const heroRest = heroParts.slice(1).join(" ");
+
+  const scaledHeroNumber = useMemo(() => {
+    const parsed = parseFloat(heroNumberRaw);
+    if (isNaN(parsed)) {
+      return heroNumberRaw;
+    }
+    return formatNum(parsed * multiplier);
+  }, [heroNumberRaw, multiplier]);
 
   return (
     <ScrollView
@@ -71,10 +93,37 @@ export function ResultScreen({ route, navigation }: Props) {
         <Text style={styles.product}>{product.name}</Text>
         {product.brand ? <Text style={styles.brand}>{product.brand}</Text> : null}
 
+        {/* Serving size toggle */}
+        {hasPackSize && (
+          <View style={styles.toggleOuter}>
+            <Pressable
+              style={[styles.toggleBtn, viewMode === "serving" && styles.toggleBtnActive]}
+              onPress={() => setViewMode("serving")}
+            >
+              <Text style={[styles.toggleText, viewMode === "serving" && styles.toggleTextActive]}>
+                Per Serving ({product.serving_size_g}g)
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toggleBtn, viewMode === "pack" && styles.toggleBtnActive]}
+              onPress={() => setViewMode("pack")}
+            >
+              <Text style={[styles.toggleText, viewMode === "pack" && styles.toggleTextActive]}>
+                Whole Pack ({product.package_weight_g}g)
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Hero stat — oversized, the first thing the eye hits. */}
         <View style={styles.heroCard}>
-          <Text style={styles.heroBig}>{heroNumber}</Text>
+          <Text style={styles.heroBig}>{scaledHeroNumber}</Text>
           <Text style={styles.heroRest}>{heroRest}</Text>
+          <Text style={styles.servingLabel}>
+            {viewMode === "pack"
+              ? `for the whole pack of ${product.package_weight_g}g`
+              : `per serving of ${product.serving_size_g}g`}
+          </Text>
         </View>
 
         {/* Allergen warning — high visibility if user has allergy profile */}
@@ -87,7 +136,7 @@ export function ResultScreen({ route, navigation }: Props) {
             .map((t) => (
               <View key={t.key} style={styles.tItem}>
                 <Text style={styles.tValue}>
-                  {formatNum(t.plain_value)}
+                  {formatNum(t.plain_value * multiplier)}
                   <Text style={styles.tUnit}> {t.plain_unit === "% daily limit" ? "%" : t.plain_unit}</Text>
                 </Text>
                 <Text style={styles.tLabel}>{t.label}</Text>
@@ -209,6 +258,35 @@ const styles = StyleSheet.create({
   },
   heroBig: { color: colors.accent, fontSize: font.hero, fontWeight: weight.black, lineHeight: font.hero },
   heroRest: { color: colors.ink, fontSize: font.h2, fontWeight: weight.bold, marginTop: 2 },
+  servingLabel: { color: colors.inkSoft, fontSize: font.small, fontWeight: weight.semibold, marginTop: space.sm },
+  toggleOuter: {
+    flexDirection: "row",
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radius.pill,
+    padding: 4,
+    marginTop: space.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.pill,
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.surface,
+    ...shadow.card,
+  },
+  toggleText: {
+    fontSize: font.small,
+    fontWeight: weight.bold,
+    color: colors.inkSoft,
+  },
+  toggleTextActive: {
+    color: colors.accent,
+  },
   translationRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xl, marginBottom: space.xl },
   tItem: {},
   tValue: { color: colors.ink, fontSize: font.title, fontWeight: weight.bold },
